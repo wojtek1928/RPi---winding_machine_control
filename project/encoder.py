@@ -11,14 +11,14 @@ class Encoder:
 
     def __init__(self, pi:pigpio):
         self.__pi = pi
-        self.A = 26     # RPi BCM GPIO pin id for signal A input
-        self.B = 19     # RPi BCM GPIO pin id for signal B input
+        self.A = 17     # RPi BCM GPIO pin id for signal A input
+        self.B = 27     # RPi BCM GPIO pin id for signal B input
         self.__direction = None
 
         self.__pi.set_mode(self.A, pigpio.INPUT)
         self.__pi.set_mode(self.B, pigpio.INPUT)
 
-    def signal(self, gpio, level, tick):
+    def __signal(self, gpio, level, tick):
         if gpio == self.A:
             # The encoder rotates clockwise when the rising edge of signal B is ahead of the falling edge of signal A.
             if self.__direction:
@@ -41,9 +41,9 @@ class Encoder:
 
     def __measurement(self):
         # Callback is active only for signal A falling edge
-        A_cb = self.__pi.callback(self.A, pigpio.FALLING_EDGE, self.signal)
+        A_cb = self.__pi.callback(self.A, pigpio.FALLING_EDGE, self.__signal)
         # Callback activates whenever signal B changes state
-        B_cb = self.__pi.callback(self.B, pigpio.EITHER_EDGE, self.signal)
+        B_cb = self.__pi.callback(self.B, pigpio.EITHER_EDGE, self.__signal)
 
         self.__measurement_proccess = True
         while self.__measurement_proccess:
