@@ -7,6 +7,7 @@ from PyQt5 import uic
 
 from encoder import Encoder
 from relay_module import RelayModule
+from winding_in_progress_dialog import WindingInProgressDialog
 
 
 class ManualInsertingTab(QtWidgets.QWidget):
@@ -20,6 +21,8 @@ class ManualInsertingTab(QtWidgets.QWidget):
             self.relay_mod = relay_mod
             self.encoder = encoder
             self.parent_class = parent_class
+            self.ui_templates_dir = ui_templates_dir
+
             self.min_len = 100
 
             # Assign types and events handlers to elements
@@ -124,18 +127,21 @@ class ManualInsertingTab(QtWidgets.QWidget):
             pass
 
     def runProccess(self):
+        lenght = int(self.length_lineEdit.text())
+        quantity = int(self.quantity_lineEdit.text())
+        if (lenght > self.min_len) and (quantity > 0):
+            self.winding_dialog = WindingInProgressDialog(parent_class=self.parent_class, ui_templates_dir=self.ui_templates_dir,
+                                                          relay_mod=self.relay_mod, encoder=self.encoder, length_taget=lenght, quantity_target=quantity)
+            self.winding_dialog.rejected.connect(self.on_rejected)
+            self.winding_dialog.accepted.connect(self.on_accepted)
+            self.winding_dialog.exec_()
 
-        if (int(self.length_lineEdit.text()) > self.min_len) and (int(self.quantity_lineEdit.text()) > 0):
-            self.parent_class.enableMainWindow(
-                self.parent_class.tabWidget.currentIndex(), False)
-            self.encoder.begin_measurement()
-            self.relay_mod.winder_clockwise()
-            while self.encoder.get_distace(0) < int(self.length_lineEdit.text()):
-                time.sleep(0.01)
-                print("Current lenght: ", self.encoder.get_distace(0))
+    def on_accepted(self):
+        self.run_pushButton.setDisabled(True)
+        self.length_lineEdit.setText("")
+        self.quantity_lineEdit.setText("")
 
-            self.relay_mod.winder_STOP()
-            self.encoder.reset_measurement()
-            self.parent_class.enableMainWindow(
-                self.parent_class.tabWidget.currentIndex(), True)
-            print("Done")
+    def on_rejected(self):
+        print(self.winding_dialog)
+        del self.winding_dialog
+        print("Process canceled and obj is deleted")

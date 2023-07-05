@@ -12,8 +12,8 @@ from tab_manual_insert import ManualInsertingTab
 current_dir = os.path.dirname(os.path.abspath(__file__))
 ui_templates_dir = os.path.join(current_dir, "ui_templates")
 
-# To run this script via SSH first use command: export DISPLAY=:0
-# Do not forget to run sudo pigpiod
+# To run this script via SSH first use command: `export DISPLAY=:0`
+# Do not forget to run `sudo pigpiod`
 
 
 class UI(QMainWindow):
@@ -45,7 +45,6 @@ class UI(QMainWindow):
         infoDialog.exec_()
 
     def enableMainWindow(self, currentTab: int, state: bool):
-        print("Status:", state)
         self.tabWidget: QTabWidget
         for tab in range(self.tabWidget.count()):
             if state:

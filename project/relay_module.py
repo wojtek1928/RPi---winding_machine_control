@@ -73,9 +73,13 @@ class RelayModule:
     # Function which brings hook on the wheel to zero position
     def winder_reset_position(self, activationFunction=None):
         # activationFunction is function for enable disabled winder buttons
+        # Event for winding in progress dialog
+        self.reset_event = threading.Event()
+
         if self.__pi.read(self.__HALL_SENSOR) == 1:
             if callable(activationFunction):
                 activationFunction(True)
+            self.reset_event.set()
 
         else:
             if not self.__is_running:
@@ -90,10 +94,12 @@ class RelayModule:
                         if (time.time()-start_time) > searching_time:
                             print(
                                 "Error: Winder or Hall sensor or some relay failure")
+                            self.reset_event.set()
                             break
                         # Handling the winder stopped event
                         elif self.__is_running == False:
                             print("The winder stopped")
+                            self.reset_event.set()
                             break
                         time.sleep(0.001)
 
@@ -101,6 +107,7 @@ class RelayModule:
                     self.winder_STOP()
                     if callable(activationFunction):
                         activationFunction(True)
+                    self.reset_event.set()
 
                 finding_zero_thread = threading.Thread(
                     target=finding_zero, daemon=True)

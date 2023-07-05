@@ -81,7 +81,7 @@ class ManualSteeringTab(QWidget):
 
     def activate_winder_buttons(self, state: bool):
         # Making sure that encoder measurement is inactive and measured distance is equa to 0
-        if state and not self.encoder.is_measurement_active() and self.encoder.get_distace(0) == 0:
+        if state and not self.encoder.is_measurement_active() and self.encoder.__int__() == 0:
             self.parent_class.enableMainWindow(
                 self.parent_class.tabWidget.currentIndex(), state)
         else:
@@ -97,7 +97,7 @@ class ManualSteeringTab(QWidget):
     def display_current_value(self):
         self.is_displaying = True
         while self.is_displaying:
-            self.length_lcdNumber.display(int(self.encoder.get_distace(1)))
+            self.length_lcdNumber.display(self.encoder.__int__())
             time.sleep(0.01)
 
     def measurement(self, QButton: QPushButton):
@@ -122,4 +122,4 @@ class ManualSteeringTab(QWidget):
             self.parent_class.enableMainWindow(
                 self.parent_class.tabWidget.currentIndex(), True)
         # Display new value
-        self.length_lcdNumber.display(int(self.encoder.get_distace(1)))
+        self.length_lcdNumber.display(self.encoder.__int__())
