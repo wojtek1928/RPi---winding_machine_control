@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1023</width>
+    <width>975</width>
     <height>1258</height>
    </rect>
   </property>
@@ -21,49 +21,7 @@
      </property>
     </widget>
    </item>
-   <item row="3" column="0">
-    <widget class="QLineEdit" name="quantity_lineEdit">
-     <property name="placeholderText">
-      <string>Ilość sztuk</string>
-     </property>
-    </widget>
-   </item>
-   <item row="6" column="0">
-    <widget class="Line" name="line">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="1">
-    <widget class="QLineEdit" name="ordrerId_lineEdit">
-     <property name="placeholderText">
-      <string>Nr zlecenia</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="1">
-    <widget class="QLabel" name="label">
-     <property name="text">
-      <string>Numer zlecenia:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="0" colspan="2">
-    <widget class="QLineEdit" name="length_lineEdit">
-     <property name="placeholderText">
-      <string>Długość w mm</string>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="0" colspan="2">
-    <widget class="QLabel" name="length_label">
-     <property name="text">
-      <string>Długość linki:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="7" column="0" colspan="2">
+   <item row="5" column="0">
     <widget class="QFrame" name="keyboard">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
@@ -78,11 +36,8 @@
       <enum>QFrame::Raised</enum>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
-      <property name="horizontalSpacing">
-       <number>3</number>
-      </property>
-      <item row="8" column="3">
-       <widget class="QPushButton" name="nine_pushButton">
+      <item row="7" column="5">
+       <widget class="QPushButton" name="zero_pushButton">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
           <horstretch>0</horstretch>
@@ -93,7 +48,23 @@
          <enum>Qt::NoFocus</enum>
         </property>
         <property name="text">
-         <string>9</string>
+         <string>0</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="4">
+       <widget class="QPushButton" name="six_pushButton">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="focusPolicy">
+         <enum>Qt::NoFocus</enum>
+        </property>
+        <property name="text">
+         <string>6</string>
         </property>
        </widget>
       </item>
@@ -129,7 +100,7 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="4">
+      <item row="0" column="5">
        <widget class="QPushButton" name="backspace_pushButton">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
@@ -145,8 +116,8 @@
         </property>
        </widget>
       </item>
-      <item row="8" column="4">
-       <widget class="QPushButton" name="zero_pushButton">
+      <item row="7" column="4">
+       <widget class="QPushButton" name="nine_pushButton">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
           <horstretch>0</horstretch>
@@ -157,79 +128,49 @@
          <enum>Qt::NoFocus</enum>
         </property>
         <property name="text">
-         <string>0</string>
+         <string>9</string>
         </property>
        </widget>
       </item>
-      <item row="4" column="3">
-       <widget class="QPushButton" name="six_pushButton">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="focusPolicy">
-         <enum>Qt::NoFocus</enum>
-        </property>
-        <property name="text">
-         <string>6</string>
-        </property>
+      <item row="4" column="5">
+       <widget class="QWidget" name="arrows" native="true">
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <widget class="QPushButton" name="leftArrow_pushButton">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="focusPolicy">
+            <enum>Qt::NoFocus</enum>
+           </property>
+           <property name="text">
+            <string>←</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="rightArrow_pushButton">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="focusPolicy">
+            <enum>Qt::NoFocus</enum>
+           </property>
+           <property name="text">
+            <string>→</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </widget>
       </item>
-      <item row="9" column="1" colspan="4">
-       <layout class="QHBoxLayout" name="navigation_bar">
-        <item>
-         <widget class="QPushButton" name="leftArrow_pushButton">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="focusPolicy">
-           <enum>Qt::NoFocus</enum>
-          </property>
-          <property name="text">
-           <string>←</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="space_pushButton">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="focusPolicy">
-           <enum>Qt::NoFocus</enum>
-          </property>
-          <property name="text">
-           <string>␣</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="rightArrow_pushButton">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="focusPolicy">
-           <enum>Qt::NoFocus</enum>
-          </property>
-          <property name="text">
-           <string>→</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item row="8" column="1">
+      <item row="7" column="1">
        <widget class="QPushButton" name="seven_pushButton">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
@@ -245,7 +186,7 @@
         </property>
        </widget>
       </item>
-      <item row="8" column="2">
+      <item row="7" column="2">
        <widget class="QPushButton" name="eight_pushButton">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
@@ -261,32 +202,6 @@
         </property>
        </widget>
       </item>
-      <item row="4" column="4">
-       <widget class="QWidget" name="arrows" native="true">
-        <layout class="QHBoxLayout" name="horizontalLayout">
-         <item>
-          <widget class="QPushButton" name="dash_pushButton">
-           <property name="focusPolicy">
-            <enum>Qt::NoFocus</enum>
-           </property>
-           <property name="text">
-            <string>-</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="slash_pushButton">
-           <property name="focusPolicy">
-            <enum>Qt::NoFocus</enum>
-           </property>
-           <property name="text">
-            <string>/</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-      </item>
       <item row="4" column="1">
        <widget class="QPushButton" name="four_pushButton">
         <property name="sizePolicy">
@@ -300,22 +215,6 @@
         </property>
         <property name="text">
          <string>4</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="3">
-       <widget class="QPushButton" name="three_pushButton">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="focusPolicy">
-         <enum>Qt::NoFocus</enum>
-        </property>
-        <property name="text">
-         <string>3</string>
         </property>
        </widget>
       </item>
@@ -335,10 +234,33 @@
         </property>
        </widget>
       </item>
+      <item row="0" column="4">
+       <widget class="QPushButton" name="three_pushButton">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="focusPolicy">
+         <enum>Qt::NoFocus</enum>
+        </property>
+        <property name="text">
+         <string>3</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
-   <item row="8" column="0" colspan="2">
+   <item row="3" column="0">
+    <widget class="QLineEdit" name="quantity_lineEdit">
+     <property name="placeholderText">
+      <string>Ilość sztuk</string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0">
     <widget class="QPushButton" name="run_pushButton">
      <property name="enabled">
       <bool>true</bool>
@@ -415,6 +337,27 @@
      </property>
      <property name="text">
       <string>Rozpocznij</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="length_label">
+     <property name="text">
+      <string>Długość linki:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0">
+    <widget class="Line" name="line">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLineEdit" name="length_lineEdit">
+     <property name="placeholderText">
+      <string>Długość w mm</string>
      </property>
     </widget>
    </item>

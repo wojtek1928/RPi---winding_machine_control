@@ -1,29 +1,42 @@
 import os
 import time
 import threading
-import typing
 
+from enum import Enum
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5 import uic
 from PyQt5.QtWidgets import QWidget
 
 from encoder import Encoder
-from relay_module import RelayModule
+from machine_control import MachineControl, Actions
 from stopwatch import Stopwatch
 
 
 class WindingInProgressDialog(QtWidgets.QDialog):
 
-    __STATES = ("working", "paused", "cancelling", "done", "end")
+    class __STATES(str, Enum):
+        """
+        - working
+        - paused
+        - cancelling
+        - done
+        - end
+        """
+        working = "working"
+        pused = "paused"
+        canceling = "cancelling"
+        done = "done"
+        end = "end"
+
     __current_state: str
 
-    def __init__(self, parent_class: QtWidgets.QMainWindow, ui_templates_dir: str, relay_mod: RelayModule, encoder: Encoder, length_taget: int, quantity_target: int):
+    def __init__(self, parent_class: QtWidgets.QMainWindow, ui_templates_dir: str, machine_control: MachineControl, encoder: Encoder, length_target: int, quantity_target: int):
         super().__init__()
 
         try:
-            self.__relay_mod = relay_mod
-            self.__encoder = encoder
-            self.__length_target = length_taget
+            self.__machine_control: MachineControl = machine_control
+            self.__encoder: Encoder = encoder
+            self.__length_target = length_target
             self.__quantity_target = quantity_target
 
             uic.loadUi(os.path.join(
@@ -67,7 +80,7 @@ class WindingInProgressDialog(QtWidgets.QDialog):
             self.__wound_ropes = 0
             self.__wound_lenght = 0
 
-            self.__current_state = self.__STATES[0]
+            self.__current_state = self.__STATES.working
 
             # Run the monitoring thread
             self.display_thread = threading.Thread(
@@ -78,57 +91,59 @@ class WindingInProgressDialog(QtWidgets.QDialog):
             self.run()
 
         except Exception as e:
-            print("Module WindingInProgressDialog initialization failed.", e, sep='\n')
+            # print("Module WindingInProgressDialog initialization failed.", e, sep='\n')
+            raise Exception(e)
 
     def run(self):
-        self.__current_state = self.__STATES[0]
+        self.__current_state = self.__STATES.working
         # Run time measurement
         self.__runtime.run()
         # Run encoder measurement
         self.__encoder.begin_measurement()
         # Run winder motor
-        self.__relay_mod.winder_clockwise()
+        self.__machine_control.winder_clockwise()
 
     def pause(self):
-        self.__current_state = self.__STATES[1]
-        self.__relay_mod.winder_STOP()
+        self.__current_state = self.__STATES.pused
+        self.__machine_control.winder_STOP()
         self.__runtime.pause()
 
     def next_rope(self):
-        self.__current_state = self.__STATES[3]
+        self.__current_state = self.__STATES.done
         # Stop winder
-        self.__relay_mod.winder_STOP()
-        #Stop and reset encoder
+        self.__machine_control.winder_STOP()
+        # Stop and reset encoder
         self.__encoder.pause_measurement()
         self.__encoder.reset_measurement()
         # Cut the rope
         self.alert_label.setText("Ucinanie linki...")
-        self.__relay_mod.guillotine_press(True)
+        self.__machine_control.guillotine_press(True)
         time.sleep(1)
-        self.__relay_mod.guillotine_press(False)
+        self.__machine_control.guillotine_press(False)
         # Reset winder to zero position
         self.alert_label.setText("Bęben wraca do punktu zero...")
-        self.__relay_mod.winder_reset_position()
+        self.__machine_control.winder_reset_position()
         # Wait for winder
-        self.__relay_mod.reset_event.wait()
+        self.__machine_control.reset_event.wait()
         # Display progress
         self.progressVal_label.setText(
-                f"{self.__wound_ropes}/{self.__quantity_target}")
+            f"{self.__wound_ropes}/{self.__quantity_target}")
 
         self.__wound_ropes += 1
-        
+
         if self.__wound_ropes == self.__quantity_target:
-                self.end()
+            self.end()
         else:
             self.action_pushButton.setText("Następna linka")
-            self.alert_label.setText("Sterowanie zaciskarką zostało odblokowane,\n przygoytuj następną linkę.\n\nGdy będziesz gotowy/a przytrzymaj przycisk \nwznowienia.")
+            self.alert_label.setText(
+                "Sterowanie zaciskarką zostało odblokowane,\n przygoytuj następną linkę.\n\nGdy będziesz gotowy/a przytrzymaj przycisk \nwznowienia.")
 
     def end(self):
-        self.__current_state = self.__STATES[4]
+        self.__current_state = self.__STATES.end
         self.cancel_pushButton.setDisabled(True)
         self.alert_label.setText("Zlecenie zostało ukończone.")
         self.action_pushButton.setStyleSheet(
-                "background-color: #00aa00; color: white;")
+            "background-color: #00aa00; color: white;")
         self.action_pushButton.setText("Zakończ")
 
     def __monitoring_fcn(self):
@@ -141,14 +156,13 @@ class WindingInProgressDialog(QtWidgets.QDialog):
                 f"{self.__wound_ropes}/{self.__quantity_target}")
             # Display lenght of wound rope
             self.lengthVal_label.setText(self.__encoder.__str__())
-             
+
             # Check condition
             if self.__wound_ropes == self.__quantity_target:
                 self.end()
 
             elif self.__encoder.__int__() >= self.__length_target:
                 self.next_rope()
-                
 
             time.sleep(0.01)
 
@@ -157,7 +171,7 @@ class WindingInProgressDialog(QtWidgets.QDialog):
         if self.__current_state == "working" or self.__current_state == "paused" or self.__current_state == "done":
             self.pause()
             # Switch state to cancelling
-            self.__current_state = self.__STATES[2]
+            self.__current_state = self.__STATES.canceling
             # Display message to user
             self.alert_label.setText(
                 "Czy na pewno chcesz anulować obecne zadanie?")
@@ -172,7 +186,7 @@ class WindingInProgressDialog(QtWidgets.QDialog):
                 "background-color: #00aa00; color: white;")
 
         elif self.__current_state == "cancelling":
-            self.__current_state = self.__STATES[1]
+            self.__current_state = self.__STATES.pused
             # Remove message to user
             self.alert_label.setText("")
             # Change action button text and color
@@ -202,4 +216,3 @@ class WindingInProgressDialog(QtWidgets.QDialog):
             self.run()
         elif self.__current_state == 'end':
             self.accept()
-            
