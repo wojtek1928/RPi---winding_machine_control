@@ -21,6 +21,8 @@ class Encoder:
     """
     # Measured distance value in [mm]
     __measured_length = 0
+    # Flag for initial begin
+    __is_initial_run = True
     # Distance in mm per one puls [mm/puls]. Circumference of measuring wheel is 200 mm and encoder gives 3600 pulses per rotation.
     _step_in_mm = 200/3600
 
@@ -95,11 +97,15 @@ class Encoder:
         A_cb.cancel()
         B_cb.cancel()
 
-    def begin_measurement(self):
+    def begin_measurement(self, initial_dist: int = 0):
         """
        Function begin the measuring process, only  if `signal_thread` is not already running
         """
         if not self.is_measurement_active():
+            if self.__is_initial_run:
+                self.__measured_length = initial_dist
+                self.__is_initial_run = False
+
             self.stop_event = threading.Event()
             self.signal_thread = threading.Thread(
                 target=self.__measurement, daemon=True, name="Enocder_thread")
@@ -118,6 +124,7 @@ class Encoder:
         """
         if self.is_measurement_active():
             self.stop_event.set()
+            self.__is_initial_run = True
             logger.info("Measurement stopped")
 
     def reset_measurement(self):

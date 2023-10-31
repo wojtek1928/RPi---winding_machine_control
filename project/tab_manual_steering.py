@@ -7,8 +7,7 @@ from PyQt5.QtWidgets import QMainWindow,  QPushButton, QWidget
 from PyQt5 import uic, QtCore
 
 from encoder import Encoder
-from machine_control import MachineControl, Actions
-from winder_control import WinderThread
+from machine_control import MachineControl, Actions, MachineWorker
 from LOGS.error_handling import ErrorDialog
 
 
@@ -66,15 +65,21 @@ class ManualSteeringTab(QWidget):
     def alert(self, err_title, err_desc):
         ErrorDialog(self.parent_class, err_title, err_desc, self.buzzer)
 
-    def winder_reset_position_ex(self):
-        # Disable buttons
-        self.setMainWindowEnabled(False)
-        self.clockwise_pushButton.setDisabled(True)
-        self.counterClockwise_pushButton.setDisabled(True)
-        self.zeroPosition_pushButton.setDisabled(True)
-        self.guillotine_pushButton.setDisabled(True)
-        # Execute action
-        self.__executor(Actions.winder_reset_position)
+    def winder_STOP(self):
+        # Disable button for execution time
+        self.stop_pushButton.setDisabled(True)
+        # Thread definition
+        action = Actions.winder_STOP
+        pool = QtCore.QThreadPool.globalInstance()
+        worker = MachineWorker(self.machine_control, action)
+        # Done signal handling
+        worker.signals.done.connect(self.unlockUIAfterExecution)
+        # Error signal handling
+        worker.signals.error_signal.connect(self.alert)
+        # Set action on thread start
+        worker.signals.started.connect(worker.run)
+        # Start thread
+        pool.start(worker)
 
     def winder_clockwise_ex(self):
         # Disable buttons
@@ -83,77 +88,49 @@ class ManualSteeringTab(QWidget):
         self.counterClockwise_pushButton.setDisabled(True)
         self.zeroPosition_pushButton.setDisabled(True)
         self.guillotine_pushButton.setDisabled(True)
-        # Execute action
-        self.__executor(Actions.winder_clockwise)
+        # Thread definition
+        action = Actions.winder_clockwise
+        pool = QtCore.QThreadPool.globalInstance()
+        worker = MachineWorker(self.machine_control, action)
+        # Done signal handling
+        # Error signal handling
+        worker.signals.error_signal.connect(self.unlockUIAfterExecution)
+        # Set action on thread start
+        worker.signals.started.connect(worker.run)
+        # Start thread
+        pool.start(worker)
 
-    def afterExecution(self, action: Actions):
-        self.winder_ex_thread.deleteLater()
-        del self.winder_ex_thread
-        del self.MC_worker
-
-        # Enable buttons automatic if motor is stopped
-        if not self.machine_control.is_motor_on():
-            self.setMainWindowEnabled(True)
-            self.clockwise_pushButton.setEnabled(True)
-            self.counterClockwise_pushButton.setEnabled(True)
-            self.zeroPosition_pushButton.setEnabled(True)
-            self.guillotine_pushButton.setEnabled(True)
-
-    def __executor(self, action: Actions, *args):
-        # Check if self.winder_thread is already running before creating a new thread
-        if not hasattr(self, 'winder_ex_thread'):
-            # Thread definition
-            self.winder_ex_thread = QtCore.QThread()
-            self.MC_worker = MachineControl(self.pi, self.buzzer)
-            self.MC_worker.moveToThread(self.winder_ex_thread)
-            # Done signal handling
-            self.MC_worker.done.connect(self.winder_ex_thread.quit)
-            self.MC_worker.done.connect(self.MC_worker.deleteLater)
-            # Error signal handling
-            self.MC_worker.error_signal.connect(self.alert)
-            # Thread finished handling
-            self.winder_ex_thread.finished.connect(
-                partial(self.afterExecution, action))
-            # Set action on thread start
-            self.winder_ex_thread.started.connect(
-                partial(self.MC_worker.execute, action, *args)
-            )
-            # Start thread
-            self.winder_ex_thread.start()
-
-    def afterSTOPExecution(self):
-        self.winder_STOP_thread.deleteLater()
-        self.winder_STOP_thread.wait(100)
-        del self.winder_STOP_thread
-        del self.STOP_worker
-        # Enable previous disabled buttons
+    def unlockUIAfterExecution(self, err_title: str = None, err_desc: str = None):
         self.setMainWindowEnabled(True)
         self.stop_pushButton.setEnabled(True)
         self.clockwise_pushButton.setEnabled(True)
         self.counterClockwise_pushButton.setEnabled(True)
         self.zeroPosition_pushButton.setEnabled(True)
         self.guillotine_pushButton.setEnabled(True)
+        if err_title is not None:
+            self.alert(err_title, err_desc)
 
-    def winder_STOP(self):
-        # Check if self.winder_thread is already running before creating a new thread
-        if not hasattr(self, 'winder_STOP_thread'):
-            # Thread definition
-            self.winder_STOP_thread = QtCore.QThread()
-            self.STOP_worker = MachineControl(self.pi, self.buzzer)
-            self.STOP_worker.moveToThread(self.winder_STOP_thread)
-            # Done signal handling
-            self.STOP_worker.done.connect(self.winder_STOP_thread.quit)
-            self.STOP_worker.done.connect(self.STOP_worker.deleteLater)
-            # Error signal handling
-            self.STOP_worker.error_signal.connect(self.alert)
-            # Thread finished handling
-            self.winder_STOP_thread.finished.connect(self.afterSTOPExecution)
-            # Set action on thread start
-            self.winder_STOP_thread.started.connect(
-                partial(self.STOP_worker.winder_STOP, direct_execution=True))
-            # Start thread
-            self.stop_pushButton.setDisabled(True)
-            self.winder_STOP_thread.start()
+    def winder_reset_position_ex(self):
+        # Disable buttons
+        self.setMainWindowEnabled(False)
+        self.clockwise_pushButton.setDisabled(True)
+        self.counterClockwise_pushButton.setDisabled(True)
+        self.zeroPosition_pushButton.setDisabled(True)
+        self.guillotine_pushButton.setDisabled(True)
+
+        # Thread definition
+        action = Actions.winder_reset_position
+        pool = QtCore.QThreadPool.globalInstance()
+        worker = MachineWorker(self.machine_control, action)
+        # Done signal handling
+        worker.signals.done.connect(self.unlockUIAfterExecution)
+        worker.signals.optional.connect(self.unlockUIAfterExecution)
+        # Error signal handling
+        worker.signals.error_signal.connect(self.unlockUIAfterExecution)
+        # Set action on thread start
+        worker.signals.started.connect(worker.run)
+        # Start thread
+        pool.start(worker)
 
     def setMainWindowEnabled(self, should_be_active: bool):
         # Making sure that encoder measurement is inactive and measured distance is equal to 0

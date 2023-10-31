@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>1984</width>
-    <height>1089</height>
+    <height>1114</height>
    </rect>
   </property>
   <property name="palette">
@@ -459,6 +459,7 @@
    <font>
     <family>Tahoma</family>
     <pointsize>24</pointsize>
+    <weight>50</weight>
     <bold>false</bold>
    </font>
   </property>
@@ -499,131 +500,14 @@
       <property name="currentIndex">
        <number>0</number>
       </property>
-      <property name="tabsClosable">
-       <bool>false</bool>
-      </property>
-      <property name="tabBarAutoHide">
-       <bool>false</bool>
-      </property>
-      <widget class="QWidget" name="orders_tab">
+      <widget class="QWidget" name="tab">
        <property name="enabled">
         <bool>false</bool>
        </property>
        <attribute name="title">
-        <string>Zlecenia</string>
+        <string>tab</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_3">
-        <item>
-         <widget class="QLabel" name="choice_label">
-          <property name="text">
-           <string>Wybierz zlecenie</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QScrollArea" name="orders_scrollArea">
-          <property name="widgetResizable">
-           <bool>true</bool>
-          </property>
-          <widget class="QWidget" name="scrollAreaWidgetContents">
-           <property name="geometry">
-            <rect>
-             <x>0</x>
-             <y>0</y>
-             <width>1942</width>
-             <height>600</height>
-            </rect>
-           </property>
-           <layout class="QVBoxLayout" name="verticalLayout_4">
-            <item>
-             <widget class="QListWidget" name="listWidget"/>
-            </item>
-           </layout>
-          </widget>
-         </widget>
-        </item>
-        <item>
-         <widget class="Line" name="line_2">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="runOrder_pushButton">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>0</width>
-            <height>100</height>
-           </size>
-          </property>
-          <property name="palette">
-           <palette>
-            <active>
-             <colorrole role="Button">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>255</red>
-                <green>170</green>
-                <blue>0</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="ButtonText">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>0</red>
-                <green>0</green>
-                <blue>0</blue>
-               </color>
-              </brush>
-             </colorrole>
-            </active>
-            <inactive>
-             <colorrole role="Button">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>70</red>
-                <green>70</green>
-                <blue>70</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="ButtonText">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>0</red>
-                <green>0</green>
-                <blue>0</blue>
-               </color>
-              </brush>
-             </colorrole>
-            </inactive>
-            <disabled>
-             <colorrole role="Button">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>70</red>
-                <green>70</green>
-                <blue>70</blue>
-               </color>
-              </brush>
-             </colorrole>
-            </disabled>
-           </palette>
-          </property>
-          <property name="text">
-           <string>Rozpocznij</string>
-          </property>
-          <property name="shortcut">
-           <string/>
-          </property>
-         </widget>
-        </item>
-       </layout>
+       <layout class="QVBoxLayout" name="verticalLayout_3"/>
       </widget>
      </widget>
     </item>
@@ -646,13 +530,14 @@
      <x>0</x>
      <y>0</y>
      <width>1984</width>
-     <height>83</height>
+     <height>95</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuSettings">
     <property name="title">
-     <string>Ustawienia</string>
+     <string>Edycja</string>
     </property>
+    <addaction name="actionSettings"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -682,6 +567,11 @@
     <font>
      <pointsize>20</pointsize>
     </font>
+   </property>
+  </action>
+  <action name="actionSettings">
+   <property name="text">
+    <string>Ustawienia</string>
    </property>
   </action>
  </widget>
