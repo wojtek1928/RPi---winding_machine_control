@@ -26,6 +26,8 @@ class BTN(Enum):
 class WindingInProgressDialog(QtWidgets.QDialog):
     __current_state: STATES = None
     __previous_state: STATES
+    # Flag for blocking buttons in case of unexpected rope pulling
+    __block__buttons: bool = False
     # Stores STATE which was paused or canceled as target to which should be set after continuing or canceling termination.
     __paused_state: STATES = None
     # Flag that prevents length condition multiple activation
@@ -39,7 +41,7 @@ class WindingInProgressDialog(QtWidgets.QDialog):
             buzzer: Buzzer,
             length_target: int,
             quantity_target: int,
-            diameter: int,
+            diameter: float,
             order_id: str,
             customer_name: str = ""
     ):
@@ -53,7 +55,7 @@ class WindingInProgressDialog(QtWidgets.QDialog):
             self.__length_target = length_target
             self.__quantity_target = quantity_target
             self.__diameter = diameter
-            self.__order_id = order_id
+            self.order_id = order_id
             self.__customer_name = customer_name
 
             uic.loadUi(os.path.join(
@@ -79,6 +81,11 @@ class WindingInProgressDialog(QtWidgets.QDialog):
             self.second_pushButton.setFont(QtGui.QFont("Tahoma", 30))
             self.second_pushButton.clicked.connect(self.__second_btn_fcn)
 
+            # orderIdVal_label displays time since begin of the winding process
+            self.orderIdVal_label: QtWidgets.QLabel
+            self.orderIdVal_label.setFont(QtGui.QFont("Tahoma", 24))
+            self.orderIdVal_label.setText(self.order_id)
+
             # timeVal_label displays time since begin of the winding process
             self.timeVal_label: QtWidgets.QLabel
             self.timeVal_label.setFont(QtGui.QFont("Tahoma", 24))
@@ -86,7 +93,7 @@ class WindingInProgressDialog(QtWidgets.QDialog):
             # progressVal_label displays the currently wound rope
             self.progressVal_label: QtWidgets.QLabel
             self.progressVal_label.setFont(QtGui.QFont("Tahoma", 24))
-            self.progressVal_label.setText(f"0/{self.__quantity_target}")
+            self.progressVal_label.setText(f"0 / {self.__quantity_target}")
 
             # lengthVal_label displays the current length of the wound rope
             self.lengthVal_label: QtWidgets.QLabel
@@ -100,14 +107,17 @@ class WindingInProgressDialog(QtWidgets.QDialog):
             # Set stopwatch object
             self.__runtime = Stopwatch()
             self.__quantity_current = 0
-            self.__set_working_state()
             self.initial_run()
         except Exception as e:
             print("Module WindingInProgressDialog initialization failed.", e, sep='\n')
 
     # Alert handlingfunction
     def alert(self, err_title, err_desc):
-        ErrorDialog(self.__parent_class, err_title, err_desc, self.__buzzer)
+        self.__buzzer.cancel_buzzer()
+        logger.error(err_title)
+        alert = ErrorDialog(self.__parent_class, err_title,
+                            err_desc, self.__buzzer)
+        alert.exec()
 
     def set_states(self, new_state: STATES):
         if new_state != self.__current_state:
@@ -129,20 +139,34 @@ class WindingInProgressDialog(QtWidgets.QDialog):
             self.second_pushButton.setText(text)
             self.second_pushButton.setStyleSheet(
                 f"background-color: {bg_color}; color: {text_color};")
-
+    
     def __length_monitor(self, encoder_val: str):
-        self.lengthVal_label.setText(encoder_val)
-        if int(encoder_val) > self.__length_target and not self.__rope_lenght_accepted:
-            self.__rope_lenght_accepted = True
+        self.lengthVal_label.setText(f"{encoder_val} / {self.__length_target}")
+        if int(encoder_val) > self.__length_target and not self.__rope_lenght_accepted and not self.__block__buttons:
             self.__machine_control.winder_STOP()
-            self.__set_cutRope_state()
+            if self.__current_state == STATES.winding:
+                self.__rope_lenght_accepted = True
+                self.__set_cutRope_state()
+            else:
+                self.__block__buttons = True
+                self.first_pushButton.setDisabled(True)
+                self.second_pushButton.setDisabled(True)
+                self.alert("Lina przeciągnięta bez udziału silnika", "Cofnij linę na poniżej docelowej długości z zapasem")
+        elif int(encoder_val) < self.__length_target - 1000:
+            self.__block__buttons = False
+            self.first_pushButton.setEnabled(True)
+            self.second_pushButton.setEnabled(True)
 
     def __update_time_reading(self, stopwatch_val: str):
         self.timeVal_label.setText(stopwatch_val)
 
     def __update_quantity_progress(self, new_val: int):
         self.__quantity_current = new_val
-        self.progressVal_label.setText(f"{new_val}/{self.__quantity_target}")
+        self.progressVal_label.setText(f"{new_val} / {self.__quantity_target}")
+
+    def __monitor_error(self, err_title, err_desc):
+        self.__set_pause_state()
+        self.alert(err_title, err_desc)
 
     def initial_run(self):
         self.__runtime.run()
@@ -158,13 +182,13 @@ class WindingInProgressDialog(QtWidgets.QDialog):
         self.monitor_worker.signals.time_reading.connect(
             self.__update_time_reading)
         # Error signal handling
-        self.monitor_worker.signals.error_signal.connect(self.alert)
+        self.monitor_worker.signals.error_signal.connect(self.__monitor_error)
         # Set action on thread start
         self.monitor_worker.signals.started.connect(self.monitor_worker.run)
         # Start thread
         self.monitor_pool.start(self.monitor_worker)
         # Set working state
-        self.__machine_control.execute(Actions.winder_clockwise)
+        self.__set_waitForNext_state()
 
     def winder_STOP(self):
         # Thread definition
@@ -178,17 +202,48 @@ class WindingInProgressDialog(QtWidgets.QDialog):
         # Start thread
         pool.start(worker)
 
+    def __print_label(self):
+        try:
+            printer = ZebraPrinter(
+                self.order_id,
+                self.__customer_name,
+                self.__length_target,
+                self.__diameter
+            )
+            printer.print_label()
+            logger.info("Label was added to printing queue")
+
+            if self.__current_state == STATES.reset_position:
+                self.__set_waitForNext_state()
+
+        except Exception as e:
+            self.__buzzer.cancel_buzzer()
+            logger.error("Label printing failed")
+            error = ErrorDialog(
+                self.__parent_class,
+                "Błąd drukowania etykiety",
+                "Sprawdź czy drukarka jest poprawnie podłączona i czy jest włączona.",
+                self.__buzzer,
+                printer_error=True
+            )
+            error.rejected.connect(self.__print_label)
+
+            if self.__current_state == STATES.reset_position:
+                error.accepted.connect(self.__set_waitForNext_state)
+
+            error.exec()
+
     def __first_btn_fcn(self, type_of_event: str):
         """
         A function that performs appropriate actions after user interaction with the `first_pushButton` (upper) button, depending on the value of `current_state`.
         """
-        if type_of_event == "clicked":
-            if self.__current_state in [STATES.working, STATES.reset_position, STATES.cut_rope]:
+        if type_of_event == "clicked" and not self.__block__buttons:
+            if self.__current_state in [STATES.winding, STATES.reset_position, STATES.cut_rope]:
                 self.__set_pause_state()
             elif self.__current_state == STATES.paused:
                 self.__continue_work()
-            elif self.__current_state == STATES.working_fail:
-                self.__set_working_state()
+            elif self.__current_state == STATES.winding_fail:
+                self.__set_winding_state()
             elif self.__current_state == STATES.cut_rope_fail:
                 self.__set_cutRope_state()
             elif self.__current_state == STATES.reset_position_fail:
@@ -198,7 +253,7 @@ class WindingInProgressDialog(QtWidgets.QDialog):
             elif self.__current_state == STATES.next_run_confirmation:
                 self.__set_nextRunConfirmation_state(type_of_event)
 
-        if type_of_event == "pressed":
+        if type_of_event == "pressed" and not self.__block__buttons:
             if self.__current_state == STATES.next_run_confirmation:
                 self.__set_nextRunConfirmation_state(type_of_event)
 
@@ -206,23 +261,24 @@ class WindingInProgressDialog(QtWidgets.QDialog):
         """
         A function that performs appropriate actions after user interaction with the `second_pushButton` (lower) button, depending on the value of `current_state`.
         """
-        if self.__current_state in [
-                STATES.paused,
-                STATES.working,
-                STATES.working_fail,
-                STATES.cut_rope,
-                STATES.cut_rope_fail,
-                STATES.reset_position,
-                STATES.reset_position_fail,
-                STATES.next_run_confirmation
-        ]:
-            self.__set_cancel_state()
-        elif self.__current_state == STATES.cancel:
-            self.__set_cancel_state(perform_cancel=False)
-        elif self.__current_state == STATES.summary and self.__previous_state == STATES.cancel:
-            self.reject()
-        elif self.__current_state == STATES.summary and self.__previous_state == STATES.reset_position:
-            self.accept()
+        if not self.__block__buttons:
+            if self.__current_state in [
+                    STATES.paused,
+                    STATES.winding,
+                    STATES.winding_fail,
+                    STATES.cut_rope,
+                    STATES.cut_rope_fail,
+                    STATES.reset_position,
+                    STATES.reset_position_fail,
+                    STATES.next_run_confirmation
+            ]:
+                self.__set_cancel_state()
+            elif self.__current_state == STATES.cancel:
+                self.__set_cancel_state(perform_cancel=False)
+            elif self.__current_state == STATES.summary and self.__previous_state == STATES.cancel:
+                self.reject()
+            elif self.__current_state == STATES.summary and self.__previous_state == STATES.reset_position:
+                self.accept()
 
     #######################################################
     # paused STATE actions
@@ -241,7 +297,7 @@ class WindingInProgressDialog(QtWidgets.QDialog):
         self.set_button(BTN.second, "Anuluj", "#aa0000")
 
         # MACHINE ACTIONS
-        if self.__previous_state in [STATES.working, STATES.reset_position]:
+        if self.__previous_state in [STATES.winding, STATES.reset_position]:
             self.__runtime.pause()
             self.winder_STOP()
         elif self.__previous_state == STATES.cut_rope:
@@ -255,11 +311,13 @@ class WindingInProgressDialog(QtWidgets.QDialog):
 
     def __continue_work(self):
         logger.info(f"Continue back to state: {self.__paused_state}")
+        # start detecting erros after pause
+        self.monitor_worker.should_emit_errors = True
         self.__runtime.run()
-        if self.__paused_state == STATES.working:
-            self.__set_working_state()
-        if self.__paused_state == STATES.working_fail:
-            self.__set_workingFail_state()
+        if self.__paused_state == STATES.winding:
+            self.__set_winding_state()
+        if self.__paused_state == STATES.winding_fail:
+            self.__set_windingFail_state()
         if self.__paused_state == STATES.cut_rope:
             self.__set_cutRope_state()
         if self.__paused_state == STATES.cut_rope_fail:
@@ -270,8 +328,8 @@ class WindingInProgressDialog(QtWidgets.QDialog):
             self.__set_resetPositionFail_state()
         elif self.__paused_state == STATES.next_run_confirmation:
             self.__set_waitForNext_state()
-        elif self.__paused_state == STATES.working_fail:
-            self.__set_workingFail_state()
+        elif self.__paused_state == STATES.winding_fail:
+            self.__set_windingFail_state()
 
         self.__paused_state = None
 
@@ -301,7 +359,7 @@ class WindingInProgressDialog(QtWidgets.QDialog):
             self.set_states(STATES.cancel)
 
             # MACHINE ACTIONS
-            if self.__previous_state in [STATES.working, STATES.reset_position]:
+            if self.__previous_state in [STATES.winding, STATES.reset_position]:
                 self.__runtime.pause()
                 self.winder_STOP()
             if self.__previous_state in [STATES.reset_position_fail, STATES.next_run_confirmation]:
@@ -316,14 +374,16 @@ class WindingInProgressDialog(QtWidgets.QDialog):
                 self.cut_worker.cancel_cutting_run()
 
     #######################################################
-    # working and working_fail STATES actions
+    # winding and winding_fail STATES actions
     #######################################################
 
-    def __set_working_state(self):
+    def __set_winding_state(self):
         """
         Run winder and runtime
         """
-        self.set_states(STATES.working)
+        self.set_states(STATES.winding)
+        # Monitor machine state
+        self.monitor_worker.checks_during_winding = True
         # UI ACTIONS
         self.set_info_label("Nawijanie...", "white")
         self.set_button(BTN.first, "Zatrzymaj", "#ffaa00")
@@ -336,7 +396,7 @@ class WindingInProgressDialog(QtWidgets.QDialog):
 
         def fail(err_title, err_desc):
             self.alert(err_title, err_desc)
-            self.__set_workingFail_state()
+            self.__set_windingFail_state()
 
         # Thread definition
         pool = QtCore.QThreadPool.globalInstance()
@@ -351,9 +411,9 @@ class WindingInProgressDialog(QtWidgets.QDialog):
         # Start thread
         pool.start(worker)
 
-    def __set_workingFail_state(self):
+    def __set_windingFail_state(self):
         # UI actions
-        self.set_states(STATES.working_fail)
+        self.set_states(STATES.winding_fail)
         self.set_button(BTN.first, "Powtórz próbę", "#00aa00")
         self.set_button(BTN.second, "Anuluj", "#aa0000")
         self.set_info_label(
@@ -369,9 +429,13 @@ class WindingInProgressDialog(QtWidgets.QDialog):
         self.set_info_label("Ucinanie linki...", "yellow")
         self.set_button(BTN.first, "Zatrzymaj", "#ffaa00")
         self.set_button(BTN.second, "Anuluj", "#aa0000")
-
+        # Stop mahcine monitor
+        self.monitor_worker.checks_during_winding = False
         # Machine Actions
+        # Signal stop
+        self.__buzzer.signal("stop")
         # Define after action
+
         def after():
             self.__encoder.pause_measurement()
             self.__encoder.reset_measurement()
@@ -438,9 +502,13 @@ class WindingInProgressDialog(QtWidgets.QDialog):
         # Define after action
 
         def after():
+            # Signal end
+            self.__buzzer.signal("end")
             self.__update_quantity_progress(self.__quantity_current+1)
             if self.__quantity_current >= self.__quantity_target:
                 self.__set_summary_state()
+            elif (os.getenv("PRINT_LABELS", 'False') == 'True') and (os.getenv("PRINT_LABEL_EVERY_OTHER_ROPE", 'False') == 'True') and self.__quantity_current % 2 == 0:
+                self.__print_label()
             else:
                 self.__set_waitForNext_state()
 
@@ -475,7 +543,8 @@ class WindingInProgressDialog(QtWidgets.QDialog):
 
     def __set_waitForNext_state(self):
         self.set_states(STATES.next_run_confirmation)
-        self.set_info_label("Potwierdź przygotowanie nowej linki", "lime")
+        self.set_info_label(
+            "Układ gilotyny i prasy został odblokowany.\nPotwierdź przygotowanie linki", "lime")
         self.set_button(BTN.first, "Potwierdź", "#00aa00")
 
         # Machine Actions
@@ -510,8 +579,9 @@ class WindingInProgressDialog(QtWidgets.QDialog):
             self.__next_rope_confirmed = False
             self.__confirmation_started = False
             logger.success("Run next rope winding process")
-            self.activate_guillotine_press_circuit(False)
-            self.__set_working_state()
+            # Signal start
+            self.__buzzer.signal("start")
+            self.__set_winding_state()
 
         elif self.__confirmation_started and call_type == "clicked":
             self.confirmation_worker.cancel_confirmation()
@@ -557,21 +627,15 @@ class WindingInProgressDialog(QtWidgets.QDialog):
         self.monitor_worker.set_work_done()
         self.__encoder.pause_measurement()
         self.__encoder.reset_measurement()
+        self.final_execution_time = self.__runtime.get_time()
         self.__runtime.reset()
+        self.activate_guillotine_press_circuit(True)
         # UI Actions
         if self.__previous_state == STATES.reset_position:
             self.set_info_label(
                 "Zadanie zostało zakończone pomyślnie.\n\nWciśnij „Zakończ”, aby powrócić do\n ekranu wprowadzania.",
                 "lime"
             )
-            printer = ZebraPrinter(
-                id=self.__order_id,
-                customer_name=self.__customer_name,
-                length=self.__length_target,
-                diameter=self.__diameter,
-                production_date=datetime.now().strftime("%d.%m.%Y")
-            )
-            printer.print_label()
 
         elif self.__previous_state == STATES.cancel:
             self.set_info_label(
@@ -580,6 +644,10 @@ class WindingInProgressDialog(QtWidgets.QDialog):
             )
         self.first_pushButton.setHidden(True)
         self.set_button(BTN.second, "Zakończ", "#00aa00")
+
+        # Print Label
+        if (os.getenv("PRINT_LABELS", 'False') == 'True') and self.__quantity_current > 0:
+            self.__print_label()
 
     #######################################################
     # finish STATE actions

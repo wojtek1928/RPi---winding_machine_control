@@ -1,20 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Ustawienia</class>
- <widget class="QDialog" name="Ustawienia">
+ <class>Settings</class>
+ <widget class="QDialog" name="Settings">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>587</height>
+    <width>1480</width>
+    <height>878</height>
    </rect>
-  </property>
-  <property name="font">
-   <font>
-    <family>Tahoma</family>
-    <pointsize>16</pointsize>
-   </font>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
@@ -34,6 +28,9 @@
        <pointsize>11</pointsize>
       </font>
      </property>
+     <property name="horizontalScrollBarPolicy">
+      <enum>Qt::ScrollBarAlwaysOff</enum>
+     </property>
      <property name="widgetResizable">
       <bool>true</bool>
      </property>
@@ -44,18 +41,90 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>-1290</y>
-        <width>755</width>
-        <height>1836</height>
+        <y>-1691</y>
+        <width>1435</width>
+        <height>2902</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <widget class="QLabel" name="label_printer">
+         <property name="font">
+          <font>
+           <family>Tahoma</family>
+           <pointsize>24</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Ustawienia drukowania</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QFrame" name="frame_printer">
+         <property name="frameShape">
+          <enum>QFrame::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_7">
+          <item>
+           <widget class="QCheckBox" name="checkBox_printLabels">
+            <property name="font">
+             <font>
+              <family>Tahoma</family>
+              <pointsize>24</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>Drukowanie etykiet</string>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>50</width>
+              <height>50</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="checkBox_everyOtherRope">
+            <property name="font">
+             <font>
+              <family>Tahoma</family>
+              <pointsize>24</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>Drukuj etykietę co drugą linkę</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_tip">
+            <property name="font">
+             <font>
+              <family>Tahoma</family>
+              <pointsize>12</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>(gdy wyłączone etykieta będzie drukowana tylko na koniec zadania)</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
        <item>
         <widget class="QLabel" name="label_winding">
          <property name="font">
           <font>
            <family>Tahoma</family>
-           <pointsize>16</pointsize>
+           <pointsize>24</pointsize>
            <weight>75</weight>
            <bold>true</bold>
           </font>
@@ -79,6 +148,12 @@
          <layout class="QVBoxLayout" name="verticalLayout_5">
           <item>
            <widget class="QLabel" name="label_startLength">
+            <property name="font">
+             <font>
+              <family>Tahoma</family>
+              <pointsize>24</pointsize>
+             </font>
+            </property>
             <property name="text">
              <string>Długość początkowa (0-2000 [mm])</string>
             </property>
@@ -116,6 +191,12 @@ QSpinBox::down-button {
           </item>
           <item>
            <widget class="QSlider" name="horizontalSlider_startLength">
+            <property name="font">
+             <font>
+              <family>Tahoma</family>
+              <pointsize>24</pointsize>
+             </font>
+            </property>
             <property name="maximum">
              <number>2000</number>
             </property>
@@ -126,8 +207,14 @@ QSpinBox::down-button {
           </item>
           <item>
            <widget class="QLabel" name="label_stopOffset">
+            <property name="font">
+             <font>
+              <family>Tahoma</family>
+              <pointsize>24</pointsize>
+             </font>
+            </property>
             <property name="text">
-             <string>Margnes długości przed zatrzymaniem (0-1000 [mm])</string>
+             <string>Margines długości przed zatrzymaniem (0-1000 [mm])</string>
             </property>
             <property name="wordWrap">
              <bool>true</bool>
@@ -163,6 +250,12 @@ QSpinBox::down-button {
           </item>
           <item>
            <widget class="QSlider" name="horizontalSlider_stopOffset">
+            <property name="font">
+             <font>
+              <family>Tahoma</family>
+              <pointsize>24</pointsize>
+             </font>
+            </property>
             <property name="maximum">
              <number>1000</number>
             </property>
@@ -179,7 +272,7 @@ QSpinBox::down-button {
          <property name="font">
           <font>
            <family>Tahoma</family>
-           <pointsize>16</pointsize>
+           <pointsize>24</pointsize>
            <weight>75</weight>
            <bold>true</bold>
           </font>
@@ -203,6 +296,12 @@ QSpinBox::down-button {
          <layout class="QVBoxLayout" name="verticalLayout_6">
           <item>
            <widget class="QLabel" name="label_upTime">
+            <property name="font">
+             <font>
+              <family>Tahoma</family>
+              <pointsize>24</pointsize>
+             </font>
+            </property>
             <property name="text">
              <string>Czas podnoszenia gilotyny (1-10 [s])</string>
             </property>
@@ -243,6 +342,12 @@ QSpinBox::down-button {
           </item>
           <item>
            <widget class="QSlider" name="horizontalSlider_upTime">
+            <property name="font">
+             <font>
+              <family>Tahoma</family>
+              <pointsize>24</pointsize>
+             </font>
+            </property>
             <property name="maximum">
              <number>10</number>
             </property>
@@ -253,6 +358,12 @@ QSpinBox::down-button {
           </item>
           <item>
            <widget class="QLabel" name="label_downTime">
+            <property name="font">
+             <font>
+              <family>Tahoma</family>
+              <pointsize>24</pointsize>
+             </font>
+            </property>
             <property name="text">
              <string>Czas opuszczania gilotyny (1-10 [s])</string>
             </property>
@@ -293,6 +404,12 @@ QSpinBox::down-button {
           </item>
           <item>
            <widget class="QSlider" name="horizontalSlider_downTime">
+            <property name="font">
+             <font>
+              <family>Tahoma</family>
+              <pointsize>24</pointsize>
+             </font>
+            </property>
             <property name="maximum">
              <number>10</number>
             </property>
@@ -309,7 +426,7 @@ QSpinBox::down-button {
          <property name="font">
           <font>
            <family>Tahoma</family>
-           <pointsize>16</pointsize>
+           <pointsize>24</pointsize>
            <weight>75</weight>
            <bold>true</bold>
           </font>
@@ -333,6 +450,12 @@ QSpinBox::down-button {
          <layout class="QVBoxLayout" name="verticalLayout">
           <item>
            <widget class="QLabel" name="label_searchTime">
+            <property name="font">
+             <font>
+              <family>Tahoma</family>
+              <pointsize>24</pointsize>
+             </font>
+            </property>
             <property name="text">
              <string>Czas szukania punktu zero (2-20 [s])</string>
             </property>
@@ -373,6 +496,12 @@ QSpinBox::down-button {
           </item>
           <item>
            <widget class="QSlider" name="horizontalSlider_searchTime">
+            <property name="font">
+             <font>
+              <family>Tahoma</family>
+              <pointsize>24</pointsize>
+             </font>
+            </property>
             <property name="minimum">
              <number>2</number>
             </property>
@@ -392,7 +521,7 @@ QSpinBox::down-button {
          <property name="font">
           <font>
            <family>Tahoma</family>
-           <pointsize>16</pointsize>
+           <pointsize>24</pointsize>
            <weight>75</weight>
            <bold>true</bold>
           </font>
@@ -415,7 +544,26 @@ QSpinBox::down-button {
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_8">
           <item>
+           <widget class="QCheckBox" name="checkBox_buzzerSignals">
+            <property name="font">
+             <font>
+              <family>Tahoma</family>
+              <pointsize>24</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>Sygnały dźwiękowe</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QLabel" name="label_confirmationTime">
+            <property name="font">
+             <font>
+              <family>Tahoma</family>
+              <pointsize>24</pointsize>
+             </font>
+            </property>
             <property name="text">
              <string>Czas potwierdzania następnej linki (1-10 [s])</string>
             </property>
@@ -456,6 +604,12 @@ QSpinBox::down-button {
           </item>
           <item>
            <widget class="QSlider" name="horizontalSlider_confirmationTime">
+            <property name="font">
+             <font>
+              <family>Tahoma</family>
+              <pointsize>24</pointsize>
+             </font>
+            </property>
             <property name="minimum">
              <number>1</number>
             </property>

@@ -63,7 +63,8 @@ class ManualSteeringTab(QWidget):
             print("Module ManualSteeringTab initialization failed.", e, sep='\n')
 
     def alert(self, err_title, err_desc):
-        ErrorDialog(self.parent_class, err_title, err_desc, self.buzzer)
+        alert = ErrorDialog(self.parent_class, err_title, err_desc, self.buzzer)
+        alert.exec()
 
     def winder_STOP(self):
         # Disable button for execution time

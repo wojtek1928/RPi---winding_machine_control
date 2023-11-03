@@ -6,7 +6,7 @@ from buzzer import Buzzer
 
 class ErrorDialog(QtWidgets.QDialog):
 
-    def __init__(self, parent_class: QtWidgets.QMainWindow, error_title: str, eror_desc: str, buzzer: Buzzer):
+    def __init__(self, parent_class: QtWidgets.QMainWindow, error_title: str, eror_desc: str, buzzer: Buzzer, printer_error: bool = False):
         super().__init__()
 
         self.buzzer = buzzer
@@ -36,13 +36,29 @@ class ErrorDialog(QtWidgets.QDialog):
         self.errorText_label.setText(eror_desc)
         self.errorText_label.setWordWrap(True)
 
+        # Configure confirm_pushButton
         self.confirm_pushButton: QtWidgets.QPushButton
         self.confirm_pushButton.clicked.connect(self.__confirm_error)
-        buzzer.signal('error')
-        self.exec()
 
-     # Configure confirm_pushButton
+        # Configure retry_pushButton
+        self.retry_pushButton: QtWidgets.QPushButton
+        if not printer_error:
+            self.retry_pushButton.hide()
+        else:
+            self.confirm_pushButton.setText("Kontynuuj bez etykiety")
+            self.retry_pushButton.clicked.connect(self.__retry)
+
+        # Activate buzzer signal
+        # buzzer.signal('error')
+
+    # Handle clicked event for confirm_pushButton
     def __confirm_error(self):
         logger.info(f"\"{self.error_title}\" - confirmed")
         self.buzzer.cancel_buzzer()
         self.accept()
+
+     # Handle clicked event for retry_pushButton
+    def __retry(self):
+        logger.info(f"\"{self.error_title}\" - printing retry")
+        self.buzzer.cancel_buzzer()
+        self.reject()

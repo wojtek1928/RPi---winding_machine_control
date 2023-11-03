@@ -2,13 +2,17 @@ import os
 from PyQt5 import QtCore, QtGui
 from PyQt5 import QtWidgets
 from PyQt5 import uic
+from datetime import datetime
 from loguru import logger
 
 from encoder import Encoder
 from buzzer import Buzzer
 from machine_control import MachineControl, MachineWorker
 from LOGS.error_handling import ErrorDialog
+from db.read_csv import Row
+from orders.order import Order
 from winding_in_progres import WindingInProgressDialog
+from db.db import  OrdersDBWorker, OrdersDBActions
 
 
 class ManualInsertingTab(QtWidgets.QWidget):
@@ -31,7 +35,16 @@ class ManualInsertingTab(QtWidgets.QWidget):
             self.length_lineEdit.setValidator(QtGui.QIntValidator(0, 1000000))
             self.length_lineEdit.installEventFilter(self)
             self.length_lineEdit.textChanged.connect(self.check_input)
-
+            """
+            ONLY FOR TESTING
+            """
+            self.length_lineEdit.setText("1000")
+            self.quantity_lineEdit.setText("4")
+            self.diameter_lineEdit.setText("3")
+            self.ordrerId_lineEdit.setText("280899/11/2023/1/9")
+            """
+            ONLY FOR TESTING
+            """
             # centralWidget -> tabWidget -> manualnsert_tab -> diameter_lineEdit
             self.diameter_lineEdit: QtWidgets.QLineEdit
             self.diameter_lineEdit.setValidator(
@@ -49,7 +62,7 @@ class ManualInsertingTab(QtWidgets.QWidget):
             # centralWidget -> tabWidget -> manualnsert_tab -> ordrerId_lineEdit
             self.ordrerId_lineEdit: QtWidgets.QLineEdit
             order_id_regex = QtCore.QRegularExpression(
-                r"^\d{6}/\d{2}/\d{4}/\d/\d$")
+                r"^\d{6}/\d{2}/\d{4}/[a-zA-Z0-9/]{3,5}$")
             self.ordrerId_lineEdit.setValidator(
                 QtGui.QRegularExpressionValidator(order_id_regex))
             self.ordrerId_lineEdit.installEventFilter(self)
@@ -93,7 +106,7 @@ class ManualInsertingTab(QtWidgets.QWidget):
 
             # centralWidget -> tabWidget -> manualnsert_tab -> run_pushButton
             self.run_pushButton: QtWidgets.QPushButton
-            self.run_pushButton.clicked.connect(lambda: self.runProccess())
+            self.run_pushButton.clicked.connect(lambda: self.runProcess())
             self.run_pushButton.setEnabled(False)
 
             # Add tab to main window
@@ -124,7 +137,9 @@ class ManualInsertingTab(QtWidgets.QWidget):
 
     # Alert handlingfunction
     def alert(self, err_title, err_desc):
-        ErrorDialog(self.parent_class, err_title, err_desc, self.buzzer)
+        alert = ErrorDialog(self.parent_class, err_title,
+                            err_desc, self.buzzer)
+        alert.exec()
 
     # Touchboard handler functions
     def insertSymbol(self, symbol: str):
@@ -149,12 +164,13 @@ class ManualInsertingTab(QtWidgets.QWidget):
         parsed_length = self.length_lineEdit.text().replace(' ', '')
         parsed_diameter = self.diameter_lineEdit.text().replace(' ', '')
         parsed_quantity = self.quantity_lineEdit.text().replace(' ', '')
+
         if len(parsed_length) > 0 and len(parsed_quantity) > 0 and len(parsed_diameter) > 0:
             length_valid: bool = int(parsed_length) > int(
                 os.getenv('START_LENGHT')) and self.length_lineEdit.hasAcceptableInput()
             diameter_valid: bool = self.diameter_lineEdit.hasAcceptableInput()
             quantity_valid: bool = self.quantity_lineEdit.hasAcceptableInput()
-            order_number_valid: bool = True   # self.ordrerId_lineEdit.hasAcceptableInput()
+            order_number_valid: bool = self.ordrerId_lineEdit.hasAcceptableInput()
             if length_valid and quantity_valid and order_number_valid and diameter_valid:
                 self.run_pushButton.setEnabled(True)
                 return True
@@ -165,8 +181,7 @@ class ManualInsertingTab(QtWidgets.QWidget):
             self.run_pushButton.setEnabled(False)
             return False
 
-    def runProccess(self):
-        # Final check input check
+    def runProcess(self):    
         if not self.check_input():
             self.alert("Błędne dane wejściowe",
                        "Wprowadzone dane nie są poprawne.")
@@ -182,11 +197,15 @@ class ManualInsertingTab(QtWidgets.QWidget):
                        "Przywróć bęben do pozycji zerowej.\n PAMIĘTAJ O ODCZEPIENIU LINKI OD BĘBNA PRZED PRZYWRACANIEM.")
             logger.error("Winder drum is in bad position")
             return
-        length = int(self.length_lineEdit.text().replace(" ", ''))
-        quantity = int(self.quantity_lineEdit.text().replace(" ", ''))
-        diameter = float(self.diameter_lineEdit.text().replace(
-            " ", "").replace(",", "."))
-        order_id = self.ordrerId_lineEdit.text().replace(" ", "")
+        order = Row(
+            self.ordrerId_lineEdit.text(),
+            "",
+            self.quantity_lineEdit.text(),
+            self.diameter_lineEdit.text(),
+            str(int(self.length_lineEdit.text().strip().replace(" ",""))/1000),
+            ""
+        )
+        self.add_order_to_db(order)
         logger.success(
             "Successfully run `winding_in_progress` by 'tab_manual_winding'")
         self.winding_dialog = WindingInProgressDialog(
@@ -195,10 +214,10 @@ class ManualInsertingTab(QtWidgets.QWidget):
             machine_control=self.machine_control,
             buzzer=self.buzzer,
             encoder=self.encoder,
-            length_target=length,
-            quantity_target=quantity,
-            diameter=diameter,
-            order_id=order_id
+            length_target=order.length,
+            quantity_target=order.quantity,
+            diameter=order.diameter,
+            order_id=order.order_id
         )
 
         self.winding_dialog.rejected.connect(self.on_rejected)
@@ -207,7 +226,7 @@ class ManualInsertingTab(QtWidgets.QWidget):
 
     def on_accepted(self):
         logger.success("Successfully done `winding_in_progres` dialog process")
-        del self.winding_dialog
+        self.submit_output_to_ordersDB(True)
         self.run_pushButton.setDisabled(True)
         self.length_lineEdit.setText("")
         self.diameter_lineEdit.setText("")
@@ -215,9 +234,60 @@ class ManualInsertingTab(QtWidgets.QWidget):
         self.ordrerId_lineEdit.setText("")
 
     def on_rejected(self):
-        logger.warning(
-            "Done before the expected ending, `winding_in_progres` dialog process")
-        del self.winding_dialog
-        print("Process canceled and obj is deleted")
+        self.submit_output_to_ordersDB(False)
 
-    
+    def submit_output_to_ordersDB(self, success: bool, order: Order = None):
+            # Disable `run_pushButton`
+            self.run_pushButton.setDisabled(True)
+            if order is None:
+                # Capture data from `winding_dialog`
+                order_id = self.winding_dialog.order_id
+                production_time = self.winding_dialog.final_execution_time
+                done_date = datetime.now().strftime("%Y-%m-%d %H:%M")
+                # Delete `winding_dialog` object
+                del self.winding_dialog
+                logger.info("winding_dialog was deleted.")
+            else:
+                # Insert data from order object to db
+                order_id = order.order_id
+                production_time = order.production_time_sec if order.production_time_sec else None
+                done_date = datetime.now().strftime("%Y-%m-%d %H:%M")
+
+            # Define signals actions
+            def after(_):
+                logger.info("Orders were updated")
+
+            def error(err_title: str = None, err_desc: str = None):
+                logger.error(
+                    "Orders were NOT updated.")
+                self.alert(err_title, err_desc)
+
+            # Thread definition
+            pool = QtCore.QThreadPool.globalInstance()
+            if success:
+                worker = OrdersDBWorker(
+                    OrdersDBActions.set_done_status, order_id, production_time, done_date)
+            else:
+                worker = OrdersDBWorker(
+                    OrdersDBActions.set_interrupted_status, order_id, production_time, done_date)
+            # Done signal handling
+            worker.signals.done.connect(after)
+            # Error signal handling
+            worker.signals.error.connect(error)
+            # Set action on thread start
+            worker.signals.started.connect(worker.run)
+            # Start thread
+            pool.start(worker)
+
+
+    def add_order_to_db(self, order: Row):
+
+        # Thread definition
+        pool = QtCore.QThreadPool.globalInstance()
+        worker = OrdersDBWorker(OrdersDBActions.insert_row, [order])
+        # Error signal handling
+        worker.signals.error.connect(self.alert)
+        # Set action on thread start
+        worker.signals.started.connect(worker.run)
+        # Start thread
+        pool.start(worker)

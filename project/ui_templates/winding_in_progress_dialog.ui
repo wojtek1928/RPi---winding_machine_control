@@ -481,6 +481,13 @@
        <widget class="QWidget" name="labels_widget" native="true">
         <layout class="QVBoxLayout" name="verticalLayout_5">
          <item>
+          <widget class="QLabel" name="orderId_label">
+           <property name="text">
+            <string>Nr zlecenia:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QLabel" name="time_label">
            <property name="text">
             <string>Czas trwania:</string>
@@ -516,6 +523,13 @@
          </font>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_6">
+         <item>
+          <widget class="QLabel" name="orderIdVal_label">
+           <property name="text">
+            <string>123456/12/1234/OF/1</string>
+           </property>
+          </widget>
+         </item>
          <item>
           <widget class="QLabel" name="timeVal_label">
            <property name="text">

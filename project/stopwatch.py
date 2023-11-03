@@ -62,6 +62,9 @@ class Stopwatch:
         # Return measured time in format hh:mm:ss
         return (f"{hours:02d}:{minutes:02d}:{seconds:02d}")
 
+    def get_time(self):
+        return self.__measuerd_time
+
 
 if __name__ == "__main__":
     # IMPORTANT uncomment line 32 and 33 before testing

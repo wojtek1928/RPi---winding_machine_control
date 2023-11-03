@@ -1,23 +1,28 @@
-from enum import Enum
+from enum import Enum, auto
 
 
 class STATES(Enum):
     """
-    - working
     - paused
-    - cancelling
-    - done
-    - end
+    - cancel
+    - winding
+    - winding_fail
+    - cut_rope
+    - cut_rope_fail
+    - reset_position
+    - reset_position_fail
+    - next_run_confirmation
+    - next_rope
+    - summary
     """
-    paused = 1
-    cancel = 2
-    working = 3
-    working_fail = 4
-    cut_rope = 5
-    cut_rope_fail = 6
-    reset_position = 7
-    reset_position_fail = 8
-    next_run_confirmation = 9
-    next_rope = 10
-    summary = 11
-    finish = 12
+    paused = auto()
+    cancel = auto()
+    winding = auto()
+    winding_fail = auto()
+    cut_rope = auto()
+    cut_rope_fail = auto()
+    reset_position = auto()
+    reset_position_fail = auto()
+    next_run_confirmation = auto()
+    next_rope = auto()
+    summary = auto()

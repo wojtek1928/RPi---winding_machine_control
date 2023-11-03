@@ -19,7 +19,10 @@ class Row:
             length: str,
             customer_name: str
     ):
-        self.order_id = f"{order_num.strip()}/{order_position.strip()}"
+        if len(order_position.strip()) > 0:
+            self.order_id = f"{order_num.strip()}/{order_position.strip()}"
+        else:
+            self.order_id = f"{order_num.strip()}"
         self.quantity = int(quantity.strip())
         self.diameter = float(diameter.strip().replace(",", '.'))
         self.length = int(float(length.strip().replace(",", "."))*1000)

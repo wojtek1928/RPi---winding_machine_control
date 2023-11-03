@@ -13,12 +13,11 @@ class ZebraPrinter:
     label_width = 90
     label_height = 36
 
-    def __init__(self, id: str, customer_name: str, length: int, diameter: float, production_date: str) -> None:
-        self.id = id
+    def __init__(self, order_id: str, customer_name: str, length: int, diameter: float) -> None:
+        self.order_id = order_id
         self.customer_name = customer_name
         self.length = length
         self.diameter = diameter
-        self.production_date = production_date
 
     def get_label(self) -> str:
         """
@@ -50,7 +49,7 @@ class ZebraPrinter:
         label.set_default_font(5, 0, '0')
         # Field `Nr zam.:`
         label.origin(v_begin, line(0))
-        label.write_text(f"Nr zam.: {self.id}")
+        label.write_text(f"Nr zam.: {self.order_id}")
         label.endorigin()
 
         # Field `Klient:`
@@ -64,13 +63,8 @@ class ZebraPrinter:
         label.endorigin()
 
         # Field `Średnica:`
-        label.origin(label.width/2, line(2))
-        label.write_text(f"Ø: {self.diameter} mm")
-        label.endorigin()
-
-        # Field `Data produkcji:`
         label.origin(v_begin, line(3))
-        label.write_text(f"Data produkcji: {self.production_date}")
+        label.write_text(f"Ø: {self.diameter} mm")
         label.endorigin()
 
         # print(label.dumpZPL())
@@ -99,10 +93,9 @@ class ZebraPrinter:
 
 if __name__ == '__main__':
     p = ZebraPrinter(
-        id="123456/12/1234/1/1",
+        order_id="123456/12/1234/1/1",
         customer_name="Jan Kowalski",
         length=10500,
-        diameter=3.2,
-        production_date=datetime.now().strftime("%d.%m.%Y")
+        diameter=3.2
     )
-    p.print_label()
+    p.get_label()

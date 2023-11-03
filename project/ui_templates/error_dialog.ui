@@ -80,7 +80,7 @@
         <x>0</x>
         <y>0</y>
         <width>776</width>
-        <height>270</height>
+        <height>157</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -99,7 +99,26 @@
     </widget>
    </item>
    <item>
+    <widget class="QPushButton" name="retry_pushButton">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>75</height>
+      </size>
+     </property>
+     <property name="text">
+      <string>Ponów próbę</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QPushButton" name="confirm_pushButton">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>75</height>
+      </size>
+     </property>
      <property name="text">
       <string>Potwierdź</string>
      </property>

@@ -1,3 +1,4 @@
+from os import getenv
 import threading
 import pigpio
 import time
@@ -115,18 +116,19 @@ class Buzzer:
         - end - 3 X (`4 sec` beep - `1 sec` silent) = `15sec`
         - error - 20 X (`0.5 `sec beep - `0.5 sec` silent) = `20sec`
         """
-        if not hasattr(self, 'signal_thread') and Buzzer.__is_executed == False:
+        if signal_name == "error" or (getenv("BUZZER_SIGNALS", 'False') == 'True'):
+            if not hasattr(self, 'signal_thread') and Buzzer.__is_executed == False:
 
-            # Create cancel event
-            self.__cancel_buzzer_event = threading.Event()
+                # Create cancel event
+                self.__cancel_buzzer_event = threading.Event()
 
-            self.signal_thread = threading.Thread(
-                target=partial(self.__run_signal, signal_name,
-                               self.__cancel_buzzer_event),
-                name="Buzzer_thread")
+                self.signal_thread = threading.Thread(
+                    target=partial(self.__run_signal, signal_name,
+                                self.__cancel_buzzer_event),
+                    name="Buzzer_thread")
 
-            Buzzer.__is_executed = True
-            self.signal_thread.start()
+                Buzzer.__is_executed = True
+                self.signal_thread.start()
 
 
 if __name__ == "__main__":

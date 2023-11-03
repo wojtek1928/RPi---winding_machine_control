@@ -23,5 +23,8 @@ class ConfirmationAlert(QDialog):
         self.label_desc.setText(description)
         # Add buttons to buttonBox
         self.buttonBox: QDialogButtonBox
-        self.buttonBox.addButton(QDialogButtonBox.Save)
-        self.buttonBox.addButton(QDialogButtonBox.Cancel)
+        save_btn = self.buttonBox.addButton(QDialogButtonBox.Save)
+        cancel_btn = self.buttonBox.addButton(QDialogButtonBox.Cancel)
+        # Set custom text for the buttons
+        save_btn.setText("Zapisz")
+        cancel_btn.setText("Anuluj")

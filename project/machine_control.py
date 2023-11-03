@@ -191,11 +191,16 @@ class MachineControl(QtCore.QRunnable):
                 action(*args, **kwargs)
                 MachineControl.__is_executed = False
 
-    def is_motor_on(self):
+    def is_motor_on(self, raise_error: bool = False):
         """
         Return `True` if the motor relay (24V in the bigger box) is ON. Otherwise, return `False`.
         """
-        return True if self.__pi.read(self.__MOTOR_STATUS_PIN) else False
+        if not self.__pi.read(self.__MOTOR_STATUS_PIN):
+            if raise_error:
+                raise MachineException("Awaria silnika zwijacza", "Należy sprawdzić poprawność dziłania silnika, badź jego przekaźnika.")
+            else:
+                return False
+        return True
 
     def is_in_zero_positon(self):
         """
@@ -203,17 +208,29 @@ class MachineControl(QtCore.QRunnable):
         """
         return True if self.__pi.read(self.__HALL_SENSOR) else False
 
-    def check_air_presence(self) -> bool:
+    def is_air_present(self, raise_error: bool = False) -> bool:
         """
         Return `True` if the air pressure is correct, or `False` if the pressure is too low.
         """
-        return True if self.__pi.read(self.__PRESSOSTAT) else False
+        if not self.__pi.read(self.__PRESSOSTAT):
+            print(self.__pi.read(self.__PRESSOSTAT))
+            if raise_error:
+                raise MachineException("Niskie ciśnienie powietrza", "Sprawdź zawór pneumatyczny i połączenie z centralną pneumatyką.")
+            else:
+                return False
+        return True
 
-    def is_guillotine_up(self) -> bool:
+    def is_guillotine_up(self, raise_error: bool = False) -> bool:
         """
         Return `True` if the guillotine press is in up position and ready to work. Otherwise, return `False`.
         """
-        return True if self.__pi.read(self.__GUILLOTINE_UP) else False
+        if not self.__pi.read(self.__GUILLOTINE_UP):
+            if raise_error:
+                raise MachineException(
+                    "Gilotyna opuszczona", "Gilotyna jest w nie właściwej pozycji.\n Przyczyną może być zbyt niskie ciśnienie powietrza.")
+            else:
+                return False
+        return True
 
     # The function of starting the winder in a clockwise direction
 
@@ -234,7 +251,7 @@ class MachineControl(QtCore.QRunnable):
                     logger.error("Motor failure detected!")
                     self.winder_STOP(False)
                     self.__error_handler(
-                        "Awaria silnika zwijacza", "Należy sprawdzić poprawność dziłania silnika, badź jego przekaźnika")
+                        "Awaria silnika zwijacza", "Należy sprawdzić poprawność dziłania silnika, badź jego przekaźnika.")
                 else:
                     logger.success("Motor is running...")
                     # self.__buzzer.signal('start')
@@ -418,7 +435,7 @@ class MachineControl(QtCore.QRunnable):
                 logger.info("Guillotine nad press circuit deactivated")
                 MachineControl.__is_executed = False
 
-    def is_guillotine_press_circuit_active(self)->bool:
+    def is_guillotine_press_circuit_active(self) -> bool:
         return bool(self.__pi.read(self.__RELAY_MODULE['IN5']))
 
     def get_winder_status(self) -> bool:
@@ -453,9 +470,4 @@ class MachineWorker(QtCore.QRunnable):
 if __name__ == '__main__':
     pi = pigpio.pi()
     mc = MachineControl(pi, Buzzer(pi))
-    load_dotenv()
-    mc.execute(Actions.guillotine_press_circuit, False)
-    print(mc.is_guillotine_press_circuit_active())
-    time.sleep(2)
-    mc.execute(Actions.guillotine_press_circuit, True)
-    print(mc.is_guillotine_press_circuit_active())
+    mc.is_air_present()

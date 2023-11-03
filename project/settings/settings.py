@@ -1,7 +1,7 @@
 import os
 from PyQt5 import uic
 from loguru import logger
-from PyQt5.QtWidgets import QDialog, QWidget, QSpinBox, QDialogButtonBox, QPushButton
+from PyQt5.QtWidgets import QDialog, QWidget, QSpinBox, QCheckBox, QPushButton
 
 from settings.confirmation_alert import ConfirmationAlert
 from settings.unsaved_alert import UnsavedChanges
@@ -17,26 +17,40 @@ class SettingsDialog(QDialog):
             ui_templates_dir, "settings_dialog.ui"), self)
 
         # Assign current values from .env to fields
+
+        #Printer
+        self.checkBox_printLabels : QCheckBox
+        self.checkBox_printLabels.setChecked(os.getenv("PRINT_LABELS", 'False') == 'True')
+
+        self.checkBox_everyOtherRope : QCheckBox
+        self.checkBox_everyOtherRope.setChecked(os.getenv("PRINT_LABEL_EVERY_OTHER_ROPE", 'False') == 'True')
+
+        # Winding
         self.spinBox_startLength: QSpinBox
         self.spinBox_startLength.setValue(int(os.getenv("START_LENGHT")))
-
+        
         self.spinBox_stopOffset: QSpinBox
         self.spinBox_stopOffset.setValue(int(os.getenv("STOP_OFFSET")))
 
-        self.spinBox_searchTime: QSpinBox
-        self.spinBox_searchTime.setValue(
-            int(os.getenv("TIME_TO_SEARCH_FOR_ZERO")))
-
+        # Guillotine
         self.spinBox_downTime: QSpinBox
         self.spinBox_downTime.setValue(
             int(os.getenv("GUILLOTINE_DOWN_TIME")))
 
         self.spinBox_upTime: QSpinBox
         self.spinBox_upTime.setValue(int(os.getenv("GUILLOTINE_UP_TIME")))
-
+        
+        # Reset position 
+        self.spinBox_searchTime: QSpinBox
+        self.spinBox_searchTime.setValue(
+            int(os.getenv("TIME_TO_SEARCH_FOR_ZERO")))
+        # UI
         self.spinBox_confirmationTime: QSpinBox
         self.spinBox_confirmationTime.setValue(
             int(os.getenv("CONFIRM_NEW_LINE_TIME")))
+        
+        self.checkBox_buzzerSignals : QCheckBox
+        self.checkBox_buzzerSignals.setChecked(os.getenv("BUZZER_SIGNALS", 'False') == 'True')
 
         # Assign action to pushButton_save
         self.pushButton_save: QPushButton
@@ -102,6 +116,13 @@ class SettingsDialog(QDialog):
                 key, value = line.split('=')
                 env_vars[key] = value
         # Update values if changed
+        # Update `PRINT_LABELS` value
+        if (env_vars["PRINT_LABELS"] == 'True') != self.checkBox_printLabels.isChecked():
+            env_vars['PRINT_LABELS'] = str(self.checkBox_printLabels.isChecked())
+        # Update `PRINT_LABEL_EVERY_OTHER_ROPE` value
+        if (env_vars["PRINT_LABEL_EVERY_OTHER_ROPE"] == 'True') != self.checkBox_everyOtherRope.isChecked():
+            env_vars['PRINT_LABEL_EVERY_OTHER_ROPE'] = str(self.checkBox_everyOtherRope.isChecked())
+        
         # Update `START_LENGHT` value
         if env_vars['START_LENGHT'] != self.spinBox_startLength.value():
             env_vars['START_LENGHT'] = str(self.spinBox_startLength.value())
@@ -129,6 +150,11 @@ class SettingsDialog(QDialog):
         if env_vars['CONFIRM_NEW_LINE_TIME'] != self.spinBox_confirmationTime.value():
             env_vars['CONFIRM_NEW_LINE_TIME'] = str(
                 self.spinBox_confirmationTime.value())
+
+        # Update `BUZZER_SIGNALS` value
+        if (env_vars["BUZZER_SIGNALS"] == 'True') != self.checkBox_buzzerSignals.isChecked():
+            env_vars['BUZZER_SIGNALS'] = str(self.checkBox_buzzerSignals.isChecked())    
+        
         return env_vars
 
     def get_changed_envs(self):
