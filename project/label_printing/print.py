@@ -27,8 +27,8 @@ class ZebraPrinter:
         label = zpl.Label(self.label_height, self.label_width, dpmm=12)
         v_begin = 2  # Vertical offset for first words x orgin
 
-        h_field_first_line = 12  # y orgin of first field
-        h_line_step = 6  # space betwen lines
+        h_field_first_line = 4  # y orgin of first field
+        h_line_step = 8  # space betwen lines
 
         def line(num: int) -> int:
             """
@@ -39,14 +39,14 @@ class ZebraPrinter:
         # Set UTF-8 encoding
         label.change_international_font(28)
 
-        # Title `NITUS` word
-        label.origin(2, 2)
-        label.set_default_font(8, 0, '0')
-        label.write_text("NITUS")
-        label.endorigin()
+        # # Title `NITUS` word
+        # label.origin(2, 2)
+        # label.set_default_font(8, 0, '0')
+        # label.write_text("NITUS")
+        # label.endorigin()
 
         # Set default font for labels
-        label.set_default_font(5, 0, '0')
+        label.set_default_font(6, 0, '0')
         # Field `Nr zam.:`
         label.origin(v_begin, line(0))
         label.write_text(f"Nr zam.: {self.order_id}")
@@ -83,7 +83,7 @@ class ZebraPrinter:
             if printers['Zebra_ZD421']['printer-state-message'] == "Unplugged or turned off":
                 raise Exception("Printer unplugged or turned off")
             # Set first founded queue as output
-            printer.setqueue(printer_queue[0])
+            printer.setqueue(printer_queue[printer_queue.index('Zebra_ZD421')])
         except Exception as e:
             raise e
         # Print ZPL code from the `get_label()` function.
@@ -98,4 +98,4 @@ if __name__ == '__main__':
         length=10500,
         diameter=3.2
     )
-    p.get_label()
+    p.print_label()

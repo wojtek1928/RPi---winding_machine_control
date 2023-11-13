@@ -116,15 +116,12 @@ class MachineControl(QtCore.QRunnable):
 
     __is_executed: bool = False    # Contains the status of the winder motor relay
 
-    __is_running = False  # ONLY FOR TESTS - DELETE BEFORE PRODUCTION
-
     # Flag for cutting event, when is set to `True` then cutting is canceled
     __cancel_cutting: bool = False
 
-    def __init__(self, pi: pigpio, buzzer: Buzzer):
+    def __init__(self, pi: pigpio):
         super().__init__()
         self.__pi: pigpio.pi = pi
-        self.__buzzer = buzzer
         self.signals = Signals()
 
         # Set the pins of the relay module in OUT mode to HIGH state (relays off)
@@ -191,13 +188,16 @@ class MachineControl(QtCore.QRunnable):
                 action(*args, **kwargs)
                 MachineControl.__is_executed = False
 
-    def is_motor_on(self, raise_error: bool = False):
+    def is_motor_on(self, raise_error: bool = False, end_operation: bool = True):
         """
         Return `True` if the motor relay (24V in the bigger box) is ON. Otherwise, return `False`.
         """
         if not self.__pi.read(self.__MOTOR_STATUS_PIN):
             if raise_error:
-                raise MachineException("Awaria silnika zwijacza", "Należy sprawdzić poprawność dziłania silnika, badź jego przekaźnika.")
+                if end_operation:
+                    MachineControl.__is_executed = False
+                raise MachineException(
+                    "Awaria silnika zwijacza", "Należy sprawdzić poprawność dziłania silnika, badź jego przekaźnika.")
             else:
                 return False
         return True
@@ -208,24 +208,29 @@ class MachineControl(QtCore.QRunnable):
         """
         return True if self.__pi.read(self.__HALL_SENSOR) else False
 
-    def is_air_present(self, raise_error: bool = False) -> bool:
+    def is_air_present(self, raise_error: bool = False, end_operation:bool = True) -> bool:
         """
         Return `True` if the air pressure is correct, or `False` if the pressure is too low.
         """
         if not self.__pi.read(self.__PRESSOSTAT):
-            print(self.__pi.read(self.__PRESSOSTAT))
             if raise_error:
-                raise MachineException("Niskie ciśnienie powietrza", "Sprawdź zawór pneumatyczny i połączenie z centralną pneumatyką.")
+                if end_operation:
+                    MachineControl.__is_executed = False
+                raise MachineException(
+                    "Niskie ciśnienie powietrza", "Sprawdź zawór pneumatyczny i połączenie z centralną pneumatyką.")
             else:
                 return False
         return True
 
-    def is_guillotine_up(self, raise_error: bool = False) -> bool:
+    def is_guillotine_up(self, raise_error: bool = False, end_operation: bool = True) -> bool:
         """
         Return `True` if the guillotine press is in up position and ready to work. Otherwise, return `False`.
         """
         if not self.__pi.read(self.__GUILLOTINE_UP):
             if raise_error:
+                if end_operation:
+                    MachineControl.__is_executed = False
+                MachineControl.__is_executed=False
                 raise MachineException(
                     "Gilotyna opuszczona", "Gilotyna jest w nie właściwej pozycji.\n Przyczyną może być zbyt niskie ciśnienie powietrza.")
             else:
@@ -238,31 +243,26 @@ class MachineControl(QtCore.QRunnable):
         """
         Turn on winder in clockwise direction. Winder is working until `winder_STOP()` function is called.
         """
-        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DELETE TRUE, remove __is_running
-        if True or not self.is_motor_on() and self.check_guillotine_press() and self.check_air_presence():
+        if not self.is_motor_on() and self.is_guillotine_up(True) and self.is_air_present(True):
             self.__pi.write(self.__RELAY_MODULE['IN1'], 0)
             time.sleep(self.__ON_TIME)
             self.__pi.write(self.__RELAY_MODULE['IN1'], 1)
-            # ONLY FOR TESTS - DELETE BEFORE PRODUCTION
-            MachineControl.__is_running = True
             if after_check_status:
-                if self.is_motor_on():
+                time.sleep(0.25)
+                if not self.is_motor_on():
                     MachineControl.__is_executed = False
                     logger.error("Motor failure detected!")
                     self.winder_STOP(False)
                     self.__error_handler(
-                        "Awaria silnika zwijacza", "Należy sprawdzić poprawność dziłania silnika, badź jego przekaźnika.")
+                        "Awaria silnika zwijacza", "Należy sprawdzić poprawność dziaaaaałania silnika, badź jego przekaźnika.")
                 else:
                     logger.success("Motor is running...")
-                    # self.__buzzer.signal('start')
-
     # The function of starting the winder in a counter-clockwise direction
 
     def winder_counter_clockwise(self, state: bool):
 
         if state:
-            #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DELETE TRUE, remove __is_running
-            if True or not self.is_motor_on() and self.check_guillotine_press() and self.check_air_presence():
+            if not self.is_motor_on() and self.is_guillotine_up() and self.is_air_present():
                 self.__pi.write(self.__RELAY_MODULE['IN2'], 0)
                 time.sleep(0.1)
                 if not self.is_motor_on():
@@ -270,7 +270,7 @@ class MachineControl(QtCore.QRunnable):
 
                 else:
                     logger.success("Motor is running...")
-                    # self.__buzzer.signal('start')
+                    
         else:
             self.__pi.write(self.__RELAY_MODULE['IN2'], 1)
             time.sleep(0.1)
@@ -279,16 +279,12 @@ class MachineControl(QtCore.QRunnable):
                     "THE MOTOR STILL RUNS DESPITE THE STOP PROCEDURE!\t!!!PRESS EMERGENCY STOP!!!")
             else:
                 logger.success("Motor stopped")
-                # self.__buzzer.signal('stop')
 
     # The function of stopping the winder
-     #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! remove __is_running
     def winder_STOP(self, after_check_status: bool = True, direct_execution: bool = False):
         self.__pi.write(self.__RELAY_MODULE['IN3'], 0)
         time.sleep(self.__ON_TIME)
         self.__pi.write(self.__RELAY_MODULE['IN3'], 1)
-        # ONLY FOR TESTS - DELETE BEFORE PRODUCTION
-        MachineControl.__is_running = False
         if after_check_status:
             if self.is_motor_on():
                 logger.critical(
@@ -298,7 +294,7 @@ class MachineControl(QtCore.QRunnable):
             else:
                 logger.success("Motor stopped")
                 MachineControl.__is_executed = False
-                # self.__buzzer.signal('stop')
+                
         if direct_execution:
             self.signals.done.emit()
 
@@ -316,7 +312,7 @@ class MachineControl(QtCore.QRunnable):
             self.winder_clockwise(after_check_status=False)
             found: bool = True
             while self.__pi.read(self.__HALL_SENSOR) == 0:
-                # If zero point is not detected in 10 seconds that means the hardware failure
+                # If zero point is not detected in `TIME_TO_SEARCH_FOR_ZERO` seconds that means the hardware failure
                 if (time.time()-start_time) > int(getenv("TIME_TO_SEARCH_FOR_ZERO")):
                     self.winder_STOP()
                     found = False
@@ -328,8 +324,7 @@ class MachineControl(QtCore.QRunnable):
 
                     break
                 # Handling the winder stopped event
-                #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DELETE __is_runnning place not befor is_motor_on
-                elif self.is_motor_on() or not MachineControl.__is_running:
+                elif not self.is_motor_on():
                     MachineControl.__is_executed = False
                     logger.warning("The winder stopped")
                     found = False
@@ -346,11 +341,10 @@ class MachineControl(QtCore.QRunnable):
                 if callable(activationFunction):
                     activationFunction(True)
 
-    # The guillotine press function
 
+    # The guillotine press function
     def guillotine_press(self, state: bool):
-        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DELETE TRUE
-        if True or self.is_motor_on() and self.check_air_presence() and self.check_guillotine_press():
+        if not self.is_motor_on() and self.is_air_present():
             if state:
                 self.__pi.write(self.__RELAY_MODULE['IN4'], 0)
                 logger.info("Guillotine pressed")
@@ -371,7 +365,6 @@ class MachineControl(QtCore.QRunnable):
         if self.__cancel_cutting:
             if not self.is_guillotine_up():
                 self.__pi.write(self.__RELAY_MODULE['IN4'], 1)
-                # !!!!!!!!!!!!!!!!!!!!!! Add Not
                 if self.__pi.wait_for_edge(
                     self.__GUILLOTINE_UP,
                     pigpio.FALLING_EDGE,
@@ -379,12 +372,10 @@ class MachineControl(QtCore.QRunnable):
                 ):
                     logger.error("Guillotine stays down")
                     self.__cancel_cutting = False
-                    MachineControl.__is_executed = False
                     self.__error_handler(
                         "Awaria gilotyny", "Gilotyna nie została podniesiona")
                 else:
                     logger.success("Guillotine released")
-                    MachineControl.__is_executed = False
 
             self.__cancel_cutting = False
             logger.info("Cutting paused")
@@ -395,10 +386,10 @@ class MachineControl(QtCore.QRunnable):
         Function which breaks cutting event
         """
         self.__cancel_cutting = True
+        MachineControl.__is_executed= False
 
     def cut_rope(self):
-        # !!!!!!!!!!!!!!!!!!!!!! Remove True
-        if True or not self.is_motor_on() and self.check_air_presence() and self.check_guillotine_press():
+        if not self.is_motor_on() and self.is_air_present(True) and self.is_guillotine_up():
             self.__custom_delay(int(getenv('GUILLOTINE_UP_TIME')))
             self.__pi.write(self.__RELAY_MODULE['IN4'], 0)
             self.__custom_delay(int(getenv('GUILLOTINE_DOWN_TIME')))
@@ -411,8 +402,8 @@ class MachineControl(QtCore.QRunnable):
                 logger.success("Guillotine pressed")
             self.__pi.write(self.__RELAY_MODULE['IN4'], 1)
             self.__custom_delay(int(getenv('GUILLOTINE_UP_TIME')))
-            # !!!!!!!!!!!!!!!!!!!!!! Add Not
-            if self.is_guillotine_up():
+
+            if not self.is_guillotine_up():
                 logger.error("Guillotine stays down")
                 MachineControl.__is_executed = False
                 self.__error_handler(
@@ -424,16 +415,14 @@ class MachineControl(QtCore.QRunnable):
         """
         Function that enable the possibility of manual use of the guillotine or crimper
         """
-        # REMOVE TRUE
-        if True or not self.is_motor_on() and self.check_air_presence() and self.is_guillotine_up():
-            if state:
-                self.__pi.write(self.__RELAY_MODULE['IN5'], 1)
-                logger.info("Guillotine nad press circuit activated")
-                MachineControl.__is_executed = False
-            else:
-                self.__pi.write(self.__RELAY_MODULE['IN5'], 0)
-                logger.info("Guillotine nad press circuit deactivated")
-                MachineControl.__is_executed = False
+        if state:
+            self.__pi.write(self.__RELAY_MODULE['IN5'], 1)
+            logger.info("Guillotine nad press circuit activated")
+            MachineControl.__is_executed = False
+        else:
+            self.__pi.write(self.__RELAY_MODULE['IN5'], 0)
+            logger.info("Guillotine nad press circuit deactivated")
+            MachineControl.__is_executed = False
 
     def is_guillotine_press_circuit_active(self) -> bool:
         return bool(self.__pi.read(self.__RELAY_MODULE['IN5']))

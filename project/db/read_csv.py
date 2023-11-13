@@ -25,7 +25,11 @@ class Row:
             self.order_id = f"{order_num.strip()}"
         self.quantity = int(quantity.strip())
         self.diameter = float(diameter.strip().replace(",", '.'))
-        self.length = int(float(length.strip().replace(",", "."))*1000)
+        self.length = int((float(length.strip().replace(",", "."))*1000),)
+        # Convert to float and round 
+        length_float = round(float(length.strip().replace(",", ".")), 4)
+        # Multiply by 1000 and round to 0 decimal places
+        self.length = int(round(length_float * 1000, 0))
         self.customer_name = customer_name.strip()
 
     def __str__(self):

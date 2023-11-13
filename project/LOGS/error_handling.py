@@ -49,7 +49,7 @@ class ErrorDialog(QtWidgets.QDialog):
             self.retry_pushButton.clicked.connect(self.__retry)
 
         # Activate buzzer signal
-        # buzzer.signal('error')
+        buzzer.signal('error')
 
     # Handle clicked event for confirm_pushButton
     def __confirm_error(self):

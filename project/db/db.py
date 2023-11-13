@@ -55,7 +55,7 @@ class OrdersDB:
         try:
             cursor = self.connection.cursor()
             cursor.execute(
-                "SELECT order_id, status, quantity, length, diameter, customer_name, production_time, done_date FROM orders ORDER BY status;")
+                "SELECT order_id, status, quantity, length, diameter, customer_name, production_time, done_date FROM orders ORDER BY status, done_date DESC;")
             # Fetch all rows as a list of dictionaries
             columns = [column[0] for column in cursor.description]
             result = [dict(zip(columns, row)) for row in cursor.fetchall()]
@@ -66,7 +66,6 @@ class OrdersDB:
 
         except sqlite3.Error as e:
             raise e
-
 
     def insert_row(self, data: list[Row] = None):
         """
@@ -206,7 +205,7 @@ class OrdersDBWorker(QRunnable):
             self.db = OrdersDB()
             if self.action_name == OrdersDBActions.insert_row:
                 self.db.execute(
-                self.action_name, *self.args, **self.kwargs)
+                    self.action_name, *self.args, **self.kwargs)
             else:
                 result = self.db.execute(
                     self.action_name, *self.args, **self.kwargs)
@@ -224,7 +223,7 @@ if __name__ == "__main__":
 
     def after(result):
         print("xdxd")
-        print("xd",result[0])
+        print("xd", result[0])
 
     # Thread definition
     pool = QThreadPool.globalInstance()

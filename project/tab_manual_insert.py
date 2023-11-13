@@ -12,7 +12,7 @@ from LOGS.error_handling import ErrorDialog
 from db.read_csv import Row
 from orders.order import Order
 from winding_in_progres import WindingInProgressDialog
-from db.db import  OrdersDBWorker, OrdersDBActions
+from db.db import OrdersDBWorker, OrdersDBActions
 
 
 class ManualInsertingTab(QtWidgets.QWidget):
@@ -35,16 +35,7 @@ class ManualInsertingTab(QtWidgets.QWidget):
             self.length_lineEdit.setValidator(QtGui.QIntValidator(0, 1000000))
             self.length_lineEdit.installEventFilter(self)
             self.length_lineEdit.textChanged.connect(self.check_input)
-            """
-            ONLY FOR TESTING
-            """
-            self.length_lineEdit.setText("1000")
-            self.quantity_lineEdit.setText("4")
-            self.diameter_lineEdit.setText("3")
-            self.ordrerId_lineEdit.setText("280899/11/2023/1/9")
-            """
-            ONLY FOR TESTING
-            """
+            
             # centralWidget -> tabWidget -> manualnsert_tab -> diameter_lineEdit
             self.diameter_lineEdit: QtWidgets.QLineEdit
             self.diameter_lineEdit.setValidator(
@@ -166,7 +157,8 @@ class ManualInsertingTab(QtWidgets.QWidget):
         parsed_quantity = self.quantity_lineEdit.text().replace(' ', '')
 
         if len(parsed_length) > 0 and len(parsed_quantity) > 0 and len(parsed_diameter) > 0:
-            length_valid: bool = int(parsed_length) > int(
+            # 500 mm distance from guilotine to encoder
+            length_valid: bool = int(parsed_length) > 500+int(
                 os.getenv('START_LENGHT')) and self.length_lineEdit.hasAcceptableInput()
             diameter_valid: bool = self.diameter_lineEdit.hasAcceptableInput()
             quantity_valid: bool = self.quantity_lineEdit.hasAcceptableInput()
@@ -181,7 +173,7 @@ class ManualInsertingTab(QtWidgets.QWidget):
             self.run_pushButton.setEnabled(False)
             return False
 
-    def runProcess(self):    
+    def runProcess(self):
         if not self.check_input():
             self.alert("Błędne dane wejściowe",
                        "Wprowadzone dane nie są poprawne.")
@@ -202,9 +194,10 @@ class ManualInsertingTab(QtWidgets.QWidget):
             "",
             self.quantity_lineEdit.text(),
             self.diameter_lineEdit.text(),
-            str(int(self.length_lineEdit.text().strip().replace(" ",""))/1000),
+            str(int(self.length_lineEdit.text().strip().replace(" ", ""))/1000),
             ""
         )
+        
         self.add_order_to_db(order)
         logger.success(
             "Successfully run `winding_in_progress` by 'tab_manual_winding'")
@@ -237,48 +230,47 @@ class ManualInsertingTab(QtWidgets.QWidget):
         self.submit_output_to_ordersDB(False)
 
     def submit_output_to_ordersDB(self, success: bool, order: Order = None):
-            # Disable `run_pushButton`
-            self.run_pushButton.setDisabled(True)
-            if order is None:
-                # Capture data from `winding_dialog`
-                order_id = self.winding_dialog.order_id
-                production_time = self.winding_dialog.final_execution_time
-                done_date = datetime.now().strftime("%Y-%m-%d %H:%M")
-                # Delete `winding_dialog` object
-                del self.winding_dialog
-                logger.info("winding_dialog was deleted.")
-            else:
-                # Insert data from order object to db
-                order_id = order.order_id
-                production_time = order.production_time_sec if order.production_time_sec else None
-                done_date = datetime.now().strftime("%Y-%m-%d %H:%M")
+        # Disable `run_pushButton`
+        self.run_pushButton.setDisabled(True)
+        if order is None:
+            # Capture data from `winding_dialog`
+            order_id = self.winding_dialog.order_id
+            production_time = self.winding_dialog.final_execution_time
+            done_date = datetime.now().strftime("%Y-%m-%d %H:%M")
+            # Delete `winding_dialog` object
+            del self.winding_dialog
+            logger.info("winding_dialog was deleted.")
+        else:
+            # Insert data from order object to db
+            order_id = order.order_id
+            production_time = order.production_time_sec if order.production_time_sec else None
+            done_date = datetime.now().strftime("%Y-%m-%d %H:%M")
 
-            # Define signals actions
-            def after(_):
-                logger.info("Orders were updated")
+        # Define signals actions
+        def after(_):
+            logger.info("Orders were updated")
 
-            def error(err_title: str = None, err_desc: str = None):
-                logger.error(
-                    "Orders were NOT updated.")
-                self.alert(err_title, err_desc)
+        def error(err_title: str = None, err_desc: str = None):
+            logger.error(
+                "Orders were NOT updated.")
+            self.alert(err_title, err_desc)
 
-            # Thread definition
-            pool = QtCore.QThreadPool.globalInstance()
-            if success:
-                worker = OrdersDBWorker(
-                    OrdersDBActions.set_done_status, order_id, production_time, done_date)
-            else:
-                worker = OrdersDBWorker(
-                    OrdersDBActions.set_interrupted_status, order_id, production_time, done_date)
-            # Done signal handling
-            worker.signals.done.connect(after)
-            # Error signal handling
-            worker.signals.error.connect(error)
-            # Set action on thread start
-            worker.signals.started.connect(worker.run)
-            # Start thread
-            pool.start(worker)
-
+        # Thread definition
+        pool = QtCore.QThreadPool.globalInstance()
+        if success:
+            worker = OrdersDBWorker(
+                OrdersDBActions.set_done_status, order_id, production_time, done_date)
+        else:
+            worker = OrdersDBWorker(
+                OrdersDBActions.set_interrupted_status, order_id, production_time, done_date)
+        # Done signal handling
+        worker.signals.done.connect(after)
+        # Error signal handling
+        worker.signals.error.connect(error)
+        # Set action on thread start
+        worker.signals.started.connect(worker.run)
+        # Start thread
+        pool.start(worker)
 
     def add_order_to_db(self, order: Row):
 

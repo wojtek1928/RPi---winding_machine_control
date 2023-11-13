@@ -1,0 +1,2 @@
+CSV format:
+NUMER_ZLECENIA;NUMER_POZYCJI;ILOŚĆ_SZTUK;ŚREDNICA(milimetry-float);DLUGOŚĆ_LINKI(metry-float);NAZWA_KLIENTA

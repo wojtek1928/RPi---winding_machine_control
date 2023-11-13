@@ -37,11 +37,11 @@ class MonitorProcess(QRunnable):
             if self.should_emit_errors and self.checks_during_winding:
                 try:
                     # UNCOMMENT BEFORE PRODUCTION
-                    # self.machine_control.is_guillotine_up(True)
-                    # self.machine_control.is_motor_on(True)
-                    self.machine_control.is_air_present(True)
+                    self.machine_control.is_motor_on(True, False)
+                    self.machine_control.is_guillotine_up(True, False)
+                    self.machine_control.is_air_present(True, False)
                     pass
-                except MachineException as e:        
+                except MachineException as e:
                     self.signals.error_signal.emit(e.title, e.description)
                     self.should_emit_errors = False
 

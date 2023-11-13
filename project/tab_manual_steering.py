@@ -45,6 +45,10 @@ class ManualSteeringTab(QWidget):
 
             # centralWidget -> tabWidget -> manuaSteering_tab -> winder_frame -> options_widget -> guillotine_pushButton
             self.guillotine_pushButton: QPushButton
+            # Disable `self.guillotine_pushButton` for safety reasons
+            self.guillotine_pushButton.setDisabled(True)
+            self.guillotine_pushButton.setHidden(True)
+            # Connect actions to events
             self.guillotine_pushButton.pressed.connect(
                 partial(machine_control.execute, Actions.guillotine_press, True))
             self.guillotine_pushButton.released.connect(
@@ -63,8 +67,9 @@ class ManualSteeringTab(QWidget):
             print("Module ManualSteeringTab initialization failed.", e, sep='\n')
 
     def alert(self, err_title, err_desc):
-        alert = ErrorDialog(self.parent_class, err_title, err_desc, self.buzzer)
-        alert.exec()
+        alert = ErrorDialog(self.parent_class, err_title,
+                            err_desc, self.buzzer)
+        alert.exec_()
 
     def winder_STOP(self):
         # Disable button for execution time

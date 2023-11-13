@@ -33,7 +33,7 @@ class UI(QMainWindow):
         # Create buzzer instance
         self.buzzer = Buzzer(self.pi)
         # Create machine_control instance
-        self.machine_control = MachineControl(self.pi, self.buzzer)
+        self.machine_control = MachineControl(self.pi)
         # Create encoder instance
         self.encoder = Encoder(pi=self.pi)
 
