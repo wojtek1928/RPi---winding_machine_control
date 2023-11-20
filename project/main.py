@@ -2,6 +2,7 @@ import sys
 import os
 from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog, QMenuBar, QTabWidget, QMenu, QAction, QTabWidget
 from PyQt5 import uic
+from PyQt5.QtCore import Qt
 import pigpio
 from loguru import logger
 from dotenv import load_dotenv
@@ -27,6 +28,11 @@ logger.add(os.path.join(current_dir, "LOGS/RopeCutter.log"), rotation='1 day')
 class UI(QMainWindow):
     def __init__(self):
         super(UI, self).__init__()
+        
+        # Make sure that Taskbar is hidden
+        self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        # Make sure that curosor is hidden
+        self.setCursor(Qt.BlankCursor)
 
         # Create pigpio instance
         self.pi: pigpio.pi = pigpio.pi()

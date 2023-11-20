@@ -1,6 +1,7 @@
 import os
 from loguru import logger
 from PyQt5 import QtWidgets, uic, QtGui
+from PyQt5.QtCore import Qt
 from buzzer import Buzzer
 
 
@@ -17,6 +18,12 @@ class ErrorDialog(QtWidgets.QDialog):
         uic.loadUi(os.path.join(
             ui_templates_dir, "error_dialog.ui"), self)
         self: QtWidgets.QDialog
+        
+        # Make sure that Taskbar is hidden
+        self.setWindowModality(Qt.ApplicationModal)
+        self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        # Make sure that curosor is hidden
+        self.setCursor(Qt.BlankCursor)
 
         # Set window title
         self.setWindowTitle('Błąd maszyny')

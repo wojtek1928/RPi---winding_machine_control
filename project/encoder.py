@@ -118,13 +118,14 @@ class Encoder:
         """
         return hasattr(self, 'stop_event') and not self.stop_event.is_set()
 
-    def pause_measurement(self):
+    def pause_measurement(self, with_reset: bool = True):
         """
         Function ends the `signal_thread` thread only if thread is running 
         """
         if self.is_measurement_active():
             self.stop_event.set()
-            self.__is_initial_run = True
+            if with_reset:
+                self.__is_initial_run = True
             logger.info("Measurement stopped")
 
     def reset_measurement(self):
@@ -136,6 +137,8 @@ class Encoder:
         This function do NOT stop the `signal_thread`. If this `signal_thread` is running signals from encoder are still accuired. 
         """
         self.__measured_length = 0
+        if not self.is_measurement_active():
+            self.__is_initial_run = True
         logger.info("Measurement reset")
 
 
@@ -150,7 +153,7 @@ if __name__ == "__main__":
             time.sleep(0.1)
 
             if i > 10 and i < 20:
-                encoder.pause_measurement()
+                encoder.pause_measurement(False)
             elif i == 50:
                 encoder.reset_measurement()
             else:

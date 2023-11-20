@@ -3,6 +3,7 @@ import csv
 import glob
 import time
 from shutil import move
+import chardet
 
 
 class Row:
@@ -26,7 +27,7 @@ class Row:
         self.quantity = int(quantity.strip())
         self.diameter = float(diameter.strip().replace(",", '.'))
         self.length = int((float(length.strip().replace(",", "."))*1000),)
-        # Convert to float and round 
+        # Convert to float and round
         length_float = round(float(length.strip().replace(",", ".")), 4)
         # Multiply by 1000 and round to 0 decimal places
         self.length = int(round(length_float * 1000, 0))
@@ -55,8 +56,14 @@ class CSVReader:
 
         for file in self.files:
             # Open each founded .csv file
-            with open(file, 'r') as f:
-                # Create `Row` object for each readed row nad add them to list
+            with open(file, 'rb') as f:
+                # Use chardet to detect the encoding
+                result = chardet.detect(f.read())
+                encoding = result['encoding']
+
+            # Open the file again with the detected encoding
+            with open(file, 'r', encoding=encoding) as f:
+                # Create `Row` object for each readed row and add them to list
                 for row in csv.reader(f, delimiter=';'):
                     row_to_save = Row(*row)
                     self.orders_data.append(row_to_save)

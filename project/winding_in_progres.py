@@ -4,6 +4,7 @@ import time
 from datetime import datetime
 from functools import partial
 from PyQt5 import QtCore, QtWidgets, QtGui
+from PyQt5.QtCore import Qt
 from PyQt5 import uic
 from loguru import logger
 
@@ -60,6 +61,13 @@ class WindingInProgressDialog(QtWidgets.QDialog):
 
             uic.loadUi(os.path.join(
                 ui_templates_dir, "winding_in_progress_dialog.ui"), self)
+
+            # Make sure that Taskbar is hidden
+            self.setWindowModality(Qt.ApplicationModal)
+            self.setWindowFlags(
+                self.windowFlags() | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+            # Make sure that curosor is hidden
+            self.setCursor(Qt.BlankCursor)
 
             # Assign types and events handlers to elements
             # Info label - handles the displaying messages to user
@@ -181,13 +189,11 @@ class WindingInProgressDialog(QtWidgets.QDialog):
 
     def initial_run(self):
         self.__runtime.run()
-        self.__encoder.begin_measurement(int(os.getenv('START_LENGHT')))
         # Monitor thread definition
         self.monitor_pool = QtCore.QThreadPool.globalInstance()
         self.monitor_worker = MonitorProcess(self.__machine_control,
                                              self.__encoder, self.__runtime)
-        # Pause till confirmation
-        self.__encoder.pause_measurement()
+
         # Length signal handling
         self.monitor_worker.signals.length_reading.connect(
             self.__length_monitor)
@@ -457,7 +463,6 @@ class WindingInProgressDialog(QtWidgets.QDialog):
 
         def after():
             self.__encoder.pause_measurement()
-            self.__encoder.reset_measurement()
             self.monitor_worker.should_emit_lenght = False
             self.__set_resetPosition_state()
 
@@ -652,7 +657,6 @@ class WindingInProgressDialog(QtWidgets.QDialog):
         # Machine Actions
         self.monitor_worker.set_work_done()
         self.__encoder.pause_measurement()
-        self.__encoder.reset_measurement()
         self.final_execution_time = self.__runtime.get_time()
         self.__runtime.reset()
         self.activate_guillotine_press_circuit(True)

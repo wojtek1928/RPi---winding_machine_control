@@ -172,7 +172,7 @@ class ManualSteeringTab(QWidget):
 
         elif QButton.text() == "Pomiar - stop":
             QButton.setText("Pomiar - start")
-            self.encoder.pause_measurement()
+            self.encoder.pause_measurement(False)
             self.is_displaying = False
 
     def measurement_reset(self):
