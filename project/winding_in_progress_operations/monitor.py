@@ -21,7 +21,7 @@ class MonitorProcess(QRunnable):
         self.stopwatch = stopwatch
         self.signals = Signals()
         self.work_not_done = True
-        self.should_emit_lenght: bool = True
+        self.should_emit_lenght: bool = False
         self.should_emit_time: bool = True
         self.should_emit_errors: bool = True
         self.checks_during_winding: bool = False

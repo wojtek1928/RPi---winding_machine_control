@@ -1,6 +1,7 @@
 import os
 from PyQt5.QtWidgets import QDialog, QWidget, QLabel, QDialogButtonBox
 from PyQt5 import uic
+from PyQt5.QtCore import Qt
 
 
 class ConfirmationAlert(QDialog):
@@ -9,6 +10,12 @@ class ConfirmationAlert(QDialog):
 
         uic.loadUi(os.path.join(ui_templates_dir,
                    "settings_alert_dialog.ui"), self)
+        # Make sure that Taskbar is hidden
+        self.setWindowModality(Qt.ApplicationModal)
+        self.setWindowFlags(self.windowFlags() |
+                            Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        # Make sure that curosor is hidden
+        self.setCursor(Qt.BlankCursor)
 
         # Set window title
         self.setWindowTitle("Potwierdzenie zmiany ustawień")
