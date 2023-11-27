@@ -208,7 +208,7 @@ class MachineControl(QtCore.QRunnable):
         """
         return True if self.__pi.read(self.__HALL_SENSOR) else False
 
-    def is_air_present(self, raise_error: bool = False, end_operation:bool = True) -> bool:
+    def is_air_present(self, raise_error: bool = False, end_operation: bool = True) -> bool:
         """
         Return `True` if the air pressure is correct, or `False` if the pressure is too low.
         """
@@ -230,7 +230,7 @@ class MachineControl(QtCore.QRunnable):
             if raise_error:
                 if end_operation:
                     MachineControl.__is_executed = False
-                MachineControl.__is_executed=False
+                MachineControl.__is_executed = False
                 raise MachineException(
                     "Gilotyna opuszczona", "Gilotyna jest w nie właściwej pozycji.\n Przyczyną może być zbyt niskie ciśnienie powietrza.")
             else:
@@ -270,7 +270,7 @@ class MachineControl(QtCore.QRunnable):
 
                 else:
                     logger.success("Motor is running...")
-                    
+
         else:
             self.__pi.write(self.__RELAY_MODULE['IN2'], 1)
             time.sleep(0.1)
@@ -294,55 +294,46 @@ class MachineControl(QtCore.QRunnable):
             else:
                 logger.success("Motor stopped")
                 MachineControl.__is_executed = False
-                
+
         if direct_execution:
             self.signals.done.emit()
 
     # Function which brings hook on the wheel to zero position
-    def winder_reset_position(self, activationFunction=None):
-        # activationFunction is function for enable disabled winder buttons
+    def winder_reset_position(self):
         # Event for winding in progress dialog
+        start_time = time.time()
+        logger.info("Looking for zero position...")
+        self.winder_clockwise(after_check_status=False)
 
-        if self.__pi.read(self.__HALL_SENSOR) == 1:
-            logger.info('Done - was in zero position')
-
-        else:
-            start_time = time.time()
-            logger.info("Looking for zero position...")
-            self.winder_clockwise(after_check_status=False)
-            found: bool = True
-            while self.__pi.read(self.__HALL_SENSOR) == 0:
-                # If zero point is not detected in `TIME_TO_SEARCH_FOR_ZERO` seconds that means the hardware failure
-                if (time.time()-start_time) > int(getenv("TIME_TO_SEARCH_FOR_ZERO")):
-                    self.winder_STOP()
-                    found = False
-                    MachineControl.__is_executed = False
-                    logger.error(
-                        "Winder or Hall sensor or some relay failure")
-                    self.__error_handler(
-                        "Nie wykryto\n punktu zero", "Należy sprawdzić poprawność działania czujnika Halla i obecność magnesu na kole zwijacza.")
-
-                    break
-                # Handling the winder stopped event
-                elif not self.is_motor_on():
-                    MachineControl.__is_executed = False
-                    logger.warning("The winder stopped")
-                    found = False
-                    raise OptinalException()
-
-                time.sleep(0.001)
-
-            if not found:
-                if callable(activationFunction):
-                    activationFunction(True)
-            else:
+        while self.__pi.read(self.__HALL_SENSOR) == 0:
+            # If zero point is not detected in `TIME_TO_SEARCH_FOR_ZERO` seconds that means the hardware failure
+            if (time.time()-start_time) > int(getenv("TIME_TO_SEARCH_FOR_ZERO")):
                 self.winder_STOP()
-                logger.success("Done - zero position found")
-                if callable(activationFunction):
-                    activationFunction(True)
+                MachineControl.__is_executed = False
+                logger.error(
+                    "Winder or Hall sensor or some relay failure")
+                self.__error_handler(
+                    "Nie wykryto\n punktu zero", "Należy sprawdzić poprawność działania czujnika Halla i obecność magnesu na kole zwijacza.")
 
+                break
+            # Handling the winder stopped event
+            elif not self.is_motor_on():
+                MachineControl.__is_executed = False
+                logger.warning("The winder stopped")
+                raise OptinalException()
+
+            time.sleep(0.001)
+
+        self.winder_STOP()
+        time.sleep(1)
+        if self.__pi.read(self.__HALL_SENSOR) == 1:
+            logger.success("Done - zero position found")
+        else:
+            logger.info("Wrong position detected - run again")
+            self.winder_reset_position()
 
     # The guillotine press function
+
     def guillotine_press(self, state: bool):
         if not self.is_motor_on() and self.is_air_present():
             if state:
@@ -386,7 +377,7 @@ class MachineControl(QtCore.QRunnable):
         Function which breaks cutting event
         """
         self.__cancel_cutting = True
-        MachineControl.__is_executed= False
+        MachineControl.__is_executed = False
 
     def cut_rope(self):
         if not self.is_motor_on() and self.is_air_present(True) and self.is_guillotine_up():

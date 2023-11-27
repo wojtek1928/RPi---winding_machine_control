@@ -1,12 +1,12 @@
 # Winding machine steering
 The purpose of this project was to make a new control panel for the machine that prepers steel ropes for segment gates. The previous solution was simpler, not accurate, and user-unfriendly, it had no connection to the database, and labels were written by hand. In fact, this machine without this new control was unusable, and the worker decided not to use it as he could manually make rope faster than with a machine.
 
-Check out my video on YouTube and see the result in production: https://youtu.be/SINIwzCcFkA
+Check out my video on YouTube and see the result in production: https://youtu.be/TXwPDj5fDOA
 
 ## Reasons for making this project
 First of all, the ropes used in this type of gate require two steel ropes, which should be equal in length. The previous measuring solution had a precision of `10 cm', and at the beginning of winding, the first increment of measured length appeared at different moments.
 The second reason is that the winder motor is run with a simple relay (an inverter would be a much better choice, but it was not installed because of costs). So there is no possibility of slowing down the engine near the end of the winding process.
-So at the end, making ropes with the same length was almost impossible, and the worker had to measure each rope by hand and validate its final length. Most of those rope pairs had different lengths (the difference was even 20 cm or more between the ropes, which should be equal).
+So at the end, making ropes with the same length was almost impossible, and the worker had to measure each rope by hand and validate its final length. Most of those rope pairs had different lengths.
 Moreover, labels were printed in advance and filled out by hand, which also took time for the worker.
 
 ## Hardware modification

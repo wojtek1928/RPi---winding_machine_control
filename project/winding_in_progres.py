@@ -89,13 +89,6 @@ class WindingInProgressDialog(QtWidgets.QDialog):
             self.second_pushButton.setFont(QtGui.QFont("Tahoma", 30))
             self.second_pushButton.clicked.connect(self.__second_btn_fcn)
 
-            # `pushButton_resetAgain` handling the `__set_resetPosition_state` actions only on `wait_for_next_state`
-            self.pushButton_resetAgain: QtWidgets.QPushButton
-            self.pushButton_resetAgain.setHidden(True)
-            self.pushButton_resetAgain.setFont(QtGui.QFont("Tahoma", 30))
-            self.pushButton_resetAgain.clicked.connect(
-                partial(self.__set_resetPosition_state, False))
-
             # orderIdVal_label displays time since begin of the winding process
             self.orderIdVal_label: QtWidgets.QLabel
             self.orderIdVal_label.setFont(QtGui.QFont("Tahoma", 24))
@@ -307,8 +300,6 @@ class WindingInProgressDialog(QtWidgets.QDialog):
         """
         Stops machine and runtime 
         """
-        # Hide  `pushButton_resetAgain`
-        self.pushButton_resetAgain.setHidden(True)
         if self.__paused_state is None:
             self.__paused_state = self.__current_state
         self.set_states(STATES.paused)
@@ -363,8 +354,6 @@ class WindingInProgressDialog(QtWidgets.QDialog):
         """
         Stop winder and runtime. Ask for end process.
         """
-        # Hide  `pushButton_resetAgain`
-        self.pushButton_resetAgain.setHidden(True)
         if perform_cancel == False:
             self.__set_pause_state()
 
@@ -570,8 +559,6 @@ class WindingInProgressDialog(QtWidgets.QDialog):
 
     def __set_waitForNext_state(self):
         self.set_states(STATES.next_run_confirmation)
-        # Show `pushButton_resetAgain`
-        self.pushButton_resetAgain.setHidden(False)
         self.set_info_label(
             "Układ gilotyny i prasy został odblokowany.\nPotwierdź przygotowanie linki", "lime")
         self.set_button(BTN.first, "Potwierdź", "#00aa00")
@@ -602,8 +589,6 @@ class WindingInProgressDialog(QtWidgets.QDialog):
         If the button is still down after 'CONFIRM_NEW_LINE_TIME', then if the user presses the button, the next line winding is starting.
         """
         if self.__next_rope_confirmed and call_type == "clicked":
-            # Hide  `pushButton_resetAgain`
-            self.pushButton_resetAgain.setHidden(True)
             self.__encoder.begin_measurement(int(os.getenv('START_LENGHT')))
             self.monitor_worker.should_emit_lenght = True
             self.__rope_lenght_accepted = False
